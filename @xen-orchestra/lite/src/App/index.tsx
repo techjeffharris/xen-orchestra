@@ -35,6 +35,7 @@ import Signin from './Signin/index'
 import StyleGuide from './StyleGuide/index'
 import TabConsole from './TabConsole'
 import XapiConnection, { ObjectsByType, Vm } from '../libs/xapi'
+import Modal from '../components/Modal'
 
 const drawerWidth = 240
 
@@ -249,6 +250,7 @@ const App = withState<State, Props, Effects, Computed, ParentState, ParentEffect
   },
   ({ effects, state }) => (
     <IntlProvider messages={messagesEn} locale='en'>
+      <Modal />
       {!state.connected ? (
         <Signin />
       ) : !state.objectsFetched ? (
