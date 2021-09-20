@@ -5,8 +5,15 @@ import { withState } from 'reaclette'
 import Button from './Button'
 import IntlMessage from './IntlMessage'
 
+type AdditionalButton = {
+  index: number | string
+  label: React.ReactNode
+  onClick: () => void
+}
+
 interface GeneralParamsModal {
-  isSingleButton?: boolean
+  additionalButton?: AdditionalButton[]
+  displayCancelButton?: boolean
   message: JSX.Element
   title: JSX.Element
 }
@@ -17,12 +24,13 @@ interface ParamsModal extends GeneralParamsModal {
 }
 
 let instance: EffectContext<State, Props, Effects, Computed, ParentState, ParentEffects> | undefined
-const modal = ({ isSingleButton = false, message, onReject, onSuccess, title }: ParamsModal) => {
+const modal = ({ additionalButton, displayCancelButton = true, message, onReject, onSuccess, title }: ParamsModal) => {
   if (instance === undefined) {
     throw new Error('No modal instance')
   }
 
-  instance.state.isSingleButton = isSingleButton
+  instance.state.additionalButton = additionalButton
+  instance.state.displayCancelButton = displayCancelButton
   instance.state.message = message
   instance.state.onReject = onReject
   instance.state.onSuccess = onSuccess
@@ -31,7 +39,9 @@ const modal = ({ isSingleButton = false, message, onReject, onSuccess, title }: 
 }
 
 export const alert = (params: GeneralParamsModal): Promise<string> =>
-  new Promise((resolve, reject) => modal({ isSingleButton: true, onReject: reject, onSuccess: resolve, ...params }))
+  new Promise((resolve, reject) =>
+    modal({ displayCancelButton: false, onReject: reject, onSuccess: resolve, ...params })
+  )
 
 export const confirm = (params: GeneralParamsModal): Promise<string> =>
   new Promise((resolve, reject) => modal({ onReject: reject, onSuccess: resolve, ...params }))
@@ -39,7 +49,8 @@ export const confirm = (params: GeneralParamsModal): Promise<string> =>
 interface ParentState {}
 
 interface State {
-  isSingleButton?: boolean
+  additionalButton?: AdditionalButton[]
+  displayCancelButton?: boolean
   message?: JSX.Element
   onReject?: () => void
   onSuccess?: (value: string) => void
@@ -62,7 +73,8 @@ interface Computed {}
 const Modal = withState<State, Props, Effects, Computed, ParentState, ParentEffects>(
   {
     initialState: () => ({
-      isSingleButton: false,
+      additionalButton: undefined,
+      displayCancelButton: false,
       message: undefined,
       onReject: undefined,
       onSuccess: undefined,
@@ -91,7 +103,7 @@ const Modal = withState<State, Props, Effects, Computed, ParentState, ParentEffe
   },
   ({ effects, state }) => {
     const { _reject, _success } = effects
-    const { isSingleButton, message, showModal, title } = state
+    const { additionalButton, displayCancelButton, message, showModal, title } = state
     return showModal ? (
       <Dialog open={showModal} onClose={_reject}>
         <DialogTitle>{title}</DialogTitle>
@@ -99,7 +111,7 @@ const Modal = withState<State, Props, Effects, Computed, ParentState, ParentEffe
           <DialogContentText>{message}</DialogContentText>
         </DialogContent>
         <DialogActions>
-          {!isSingleButton && (
+          {displayCancelButton && (
             <Button onClick={_reject} color='primary'>
               <IntlMessage id='cancel' />
             </Button>
@@ -107,6 +119,11 @@ const Modal = withState<State, Props, Effects, Computed, ParentState, ParentEffe
           <Button onClick={_success} color='primary'>
             <IntlMessage id='ok' />
           </Button>
+          {additionalButton?.map(({ index, label, ...props }) => (
+            <Button key={index} {...props}>
+              {label}
+            </Button>
+          ))}
         </DialogActions>
       </Dialog>
     ) : null
