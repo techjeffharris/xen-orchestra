@@ -48,7 +48,7 @@ const Select = withState<State, Props, Effects, Computed, ParentState, ParentEff
   ({ additionalProps, effects, multiple, options, optionsRender, resetState, state, required, ...props }) => (
     <FormControl className={state.useStyles().formControl}>
       <SelectMaterialUi multiple={multiple} required={required} {...props}>
-        {!required && !multiple && (
+        {!multiple && (
           <MenuItem value=''>
             <em>
               <IntlMessage id='none' />
