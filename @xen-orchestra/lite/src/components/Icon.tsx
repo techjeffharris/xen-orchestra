@@ -6,8 +6,8 @@ import { fas } from '@fortawesome/free-solid-svg-icons'
 
 library.add(fas)
 
-const Icon = ({ icon, size }: { icon: _IconName, size?: SizeProp }): JSX.Element => (
-  <FontAwesomeIcon icon={icon} size={size} />
+const Icon = ({ icon, size, spin }: { icon: _IconName, size?: SizeProp, spin?: boolean }): JSX.Element => (
+  <FontAwesomeIcon icon={icon} size={size} spin={spin} />
 )
 
 Icon.propTypes = {

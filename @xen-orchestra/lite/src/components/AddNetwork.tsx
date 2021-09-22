@@ -18,6 +18,7 @@ interface ParentState {
 
 interface State {
   isBonded: boolean
+  isLoading: boolean
   form: {
     [key: string]: unknown
     bondMode: 'active-backup' | 'balance-slb' | 'lacp' | ''
@@ -66,6 +67,7 @@ const AddNetwork = withState<State, Props, Effects, Computed, ParentState, Paren
   {
     initialState: () => ({
       isBonded: false,
+      isLoading: false,
       form: {
         bondMode: '',
         description: '',
@@ -88,6 +90,10 @@ const AddNetwork = withState<State, Props, Effects, Computed, ParentState, Paren
     effects: {
       _createNetwork: async function (e) {
         e.preventDefault()
+        if (this.state.isLoading) {
+          return alert({ message: <p>Network is already in creation</p>, title: <IntlMessage id='networkCreation' /> })
+        }
+        this.state.isLoading = true
         const { bondMode, description, mtu, nameLabel, pifsId, vlan } = this.state.form
 
         try {
@@ -107,6 +113,7 @@ const AddNetwork = withState<State, Props, Effects, Computed, ParentState, Paren
             alert({ message: <p>{error.message}</p>, title: <IntlMessage id='networkCreation' /> })
           }
         }
+        this.state.isLoading = false
       },
       _handleChange: function (e) {
         // Reason why form values are initialized with empty string and not a undefined value
@@ -231,7 +238,7 @@ const AddNetwork = withState<State, Props, Effects, Computed, ParentState, Paren
             </IntlMessage>
           </div>
         )}
-        <Button type='submit'>
+        <Button type='submit' icon={state.isLoading ? 'spinner' : undefined} spin={state.isLoading}>
           <IntlMessage id='create' />
         </Button>
       </form>

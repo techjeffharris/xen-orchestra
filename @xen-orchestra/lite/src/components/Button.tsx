@@ -10,6 +10,7 @@ interface State {}
 
 interface Props extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   icon?: IconName
+  spin?: boolean
 }
 
 interface ParentEffects {}
@@ -29,9 +30,13 @@ const StyledButton = styled.button`
 
 const Button = withState<State, Props, Effects, Computed, ParentState, ParentEffects>(
   {},
-  ({ state, effects, resetState, icon, children, ...props }) => (
+  ({ state, effects, resetState, icon, children, spin, ...props }) => (
     <StyledButton {...props}>
-      {icon !== undefined && <><Icon icon={icon} /> </>}
+      {icon !== undefined && (
+        <>
+          <Icon icon={icon} spin={spin} />
+        </>
+      )}
       {children}
     </StyledButton>
   )
