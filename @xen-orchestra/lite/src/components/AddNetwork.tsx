@@ -1,4 +1,4 @@
-import React, { ChangeEvent, FormEventHandler } from 'react'
+import React from 'react'
 import { Map } from 'immutable'
 import { withState } from 'reaclette'
 
@@ -20,7 +20,7 @@ interface State {
   isBonded: boolean
   form: {
     [key: string]: unknown
-    bondMode: 'balance-slb' | 'active-backup' | 'lacp' | ''
+    bondMode: 'active-backup' | 'balance-slb' | 'lacp' | ''
     description: string
     mtu: string
     nameLabel: string
@@ -34,8 +34,8 @@ interface Props {}
 interface ParentEffects {}
 
 interface Effects {
-  _createNetwork: FormEventHandler<HTMLFormElement>
-  _handleChange: (e: ChangeEvent<any>) => void
+  _createNetwork: React.FormEventHandler<HTMLFormElement>
+  _handleChange: (e: React.ChangeEvent<any>) => void
   _resetForm: () => void
   _toggleBonded: () => void
 }
@@ -54,10 +54,12 @@ const OPTIONS_RENDER_PIF: Options<Pif> = {
     })`,
   value: pif => pif.$id,
 }
-const OPTIONS_RENDER_BOND_MODE: Options<string> = {
+
+const OPTIONS_RENDER_BOND_MODE: Options<State['form']['bondMode']> = {
   render: mode => mode,
   value: mode => mode,
 }
+
 const BOND_MODE = ['balance-slb', 'active-backup', 'lacp']
 
 const AddNetwork = withState<State, Props, Effects, Computed, ParentState, ParentEffects>(
@@ -86,49 +88,49 @@ const AddNetwork = withState<State, Props, Effects, Computed, ParentState, Paren
     effects: {
       _createNetwork: async function (e) {
         e.preventDefault()
-        const { nameLabel, vlan, mtu, bondMode, description, pifsId } = this.state.form
+        const { bondMode, description, mtu, nameLabel, pifsId, vlan } = this.state.form
 
         try {
           await this.state.xapi.createNetwork(
             {
-              name_label: nameLabel,
-              name_description: description,
               MTU: +mtu,
+              name_description: description,
+              name_label: nameLabel,
               VLAN: +vlan,
             },
-            { pifsId: pifsId === '' ? undefined : pifsId, bondMode: bondMode === '' ? undefined : bondMode }
+            { bondMode: bondMode === '' ? undefined : bondMode, pifsId: pifsId === '' ? undefined : pifsId }
           )
           this.effects._resetForm()
         } catch (error) {
+          console.error(error)
           if (error instanceof Error) {
             alert({ message: <p>{error.message}</p>, title: <IntlMessage id='networkCreation' /> })
           }
-          throw error
         }
       },
       _handleChange: function (e) {
-        // Reason why values are initialized with empty string and not a undefined value
+        // Reason why form values are initialized with empty string and not a undefined value
         // Warning: A component is changing an uncontrolled input to be controlled.
         // This is likely caused by the value changing from undefined to a defined value,
         // which should not happen. Decide between using a controlled or uncontrolled input
         // element for the lifetime of the component.
         // More info: https://reactjs.org/link/controlled-components
-        const stateProperty = e.target.name
+        const property = e.target.name
         const { form } = this.state
 
-        if (form[stateProperty] !== undefined) {
+        if (form[property] !== undefined) {
           this.state.form = {
             ...form,
-            [stateProperty]: e.target.value,
+            [property]: e.target.value,
           }
         }
       },
       _resetForm: function () {
         this.state.isBonded = false
-        Object.keys(this.state.form).forEach(key => {
+        Object.keys(this.state.form).forEach(property => {
           this.state.form = {
             ...this.state.form,
-            [key]: '',
+            [property]: '',
           }
         })
       },
@@ -156,29 +158,29 @@ const AddNetwork = withState<State, Props, Effects, Computed, ParentState, Paren
             <IntlMessage id='interface' />
           </label>
           <Select
-            displayEmpty
             additionalProps={{ pifsMetrics: state.pifsMetrics }}
-            options={state.collection}
+            displayEmpty
             multiple={state.isBonded}
             name='pifsId'
             onChange={effects._handleChange}
-            value={state.form.pifsId}
+            options={state.collection}
             optionsRender={OPTIONS_RENDER_PIF}
             placeholder='selectPif'
             required={state.isBonded}
+            value={state.form.pifsId}
           />
         </div>
         <div>
           <label>
             <IntlMessage id='name' />
           </label>
-          <Input name='nameLabel' required type='text' value={state.form.nameLabel} onChange={effects._handleChange} />
+          <Input name='nameLabel' onChange={effects._handleChange} required type='text' value={state.form.nameLabel} />
         </div>
         <div>
           <label>
             <IntlMessage id='description' />
           </label>
-          <Input name='description' value={state.form.description} type='text' onChange={effects._handleChange} />
+          <Input name='description' onChange={effects._handleChange} type='text' value={state.form.description} />
         </div>
         <div>
           <label>
@@ -188,10 +190,10 @@ const AddNetwork = withState<State, Props, Effects, Computed, ParentState, Paren
             {message => (
               <Input
                 name='mtu'
+                onChange={effects._handleChange}
                 placeholder={message?.toString()}
                 type='number'
                 value={state.form.mtu}
-                onChange={effects._handleChange}
               />
             )}
           </IntlMessage>
@@ -202,13 +204,13 @@ const AddNetwork = withState<State, Props, Effects, Computed, ParentState, Paren
               <IntlMessage id='bondMode' />
             </label>
             <Select
-              onChange={effects._handleChange}
-              value={state.form.bondMode}
-              options={BOND_MODE}
               name='bondMode'
+              onChange={effects._handleChange}
+              options={BOND_MODE}
               optionsRender={OPTIONS_RENDER_BOND_MODE}
               placeholder='selectBondMode'
               required
+              value={state.form.bondMode}
             />
           </div>
         ) : (
@@ -220,10 +222,10 @@ const AddNetwork = withState<State, Props, Effects, Computed, ParentState, Paren
               {message => (
                 <Input
                   name='vlan'
+                  onChange={effects._handleChange}
                   placeholder={message?.toString()}
                   type='number'
                   value={state.form.vlan}
-                  onChange={effects._handleChange}
                 />
               )}
             </IntlMessage>
