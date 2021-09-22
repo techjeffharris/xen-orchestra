@@ -222,7 +222,6 @@ export default class XapiConnection extends EventEmitter {
         await this.call('pool.create_VLAN_from_PIF', pifs?.get(pifsId)?.$ref, networkRef, newNetwork.VLAN)
       }
     } catch (error) {
-      console.error(error)
       if (networkRef !== undefined) {
         await this.call('network.destroy', networkRef)
       }

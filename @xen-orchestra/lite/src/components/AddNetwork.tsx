@@ -17,7 +17,6 @@ interface ParentState {
 }
 
 interface State {
-  formRef: React.RefObject<HTMLFormElement>
   isBonded: boolean
   form: {
     [key: string]: unknown
@@ -25,10 +24,9 @@ interface State {
     description: string
     mtu: string
     nameLabel: string
-    vlan: string
     pifsId: string | string[]
+    vlan: string
   }
-  pifsIdRef: React.RefObject<any>
 }
 
 interface Props {}
@@ -37,9 +35,9 @@ interface ParentEffects {}
 
 interface Effects {
   _createNetwork: FormEventHandler<HTMLFormElement>
+  _handleChange: (e: ChangeEvent<any>) => void
   _resetForm: () => void
   _toggleBonded: () => void
-  _handleChange: (e: ChangeEvent<any>) => void
 }
 
 interface Computed {
@@ -65,17 +63,15 @@ const BOND_MODE = ['balance-slb', 'active-backup', 'lacp']
 const AddNetwork = withState<State, Props, Effects, Computed, ParentState, ParentEffects>(
   {
     initialState: () => ({
-      formRef: React.createRef(),
       isBonded: false,
       form: {
         bondMode: '',
         description: '',
         mtu: '',
         nameLabel: '',
+        pifsId: '',
         vlan: '',
-        pifsId: ''
       },
-      pifsIdRef: React.createRef(),
     }),
     computed: {
       pifs: state => state.objectsByType.get('PIF'),
@@ -88,31 +84,9 @@ const AddNetwork = withState<State, Props, Effects, Computed, ParentState, Paren
           .toArray(),
     },
     effects: {
-      _handleChange: function (e) {
-        // Reason why values are initialized with empty string and not a undefined value
-        // Warning: A component is changing an uncontrolled input to be controlled.
-        // This is likely caused by the value changing from undefined to a defined value,
-        // which should not happen. Decide between using a controlled or uncontrolled input
-        // element for the lifetime of the component.
-        // More info: https://reactjs.org/link/controlled-components
-        const stateProperty = e.target.name
-        const form = this.state.form
-
-        if (form[stateProperty] !== undefined) {
-          this.state.form = {
-            ...form,
-            [stateProperty]: e.target.value,
-          }
-        }
-      },
       _createNetwork: async function (e) {
         e.preventDefault()
-
         const { nameLabel, vlan, mtu, bondMode, description, pifsId } = this.state.form
-        // const { current } = this.state.formRef
-        // const pifsId: string | string[] | undefined = this.state.isBonded
-        //   ? Array.from<HTMLOptionElement>(current?.pif.selectedOptions).map(({ value }) => value)
-        //   : current?.pif.value
 
         try {
           await this.state.xapi.createNetwork(
@@ -122,28 +96,44 @@ const AddNetwork = withState<State, Props, Effects, Computed, ParentState, Paren
               MTU: +mtu,
               VLAN: +vlan,
             },
-            { pifsId, bondMode: bondMode === '' ? undefined : bondMode }
+            { pifsId: pifsId === '' ? undefined : pifsId, bondMode: bondMode === '' ? undefined : bondMode }
           )
-          this.state.form.pifsId = ''
           this.effects._resetForm()
         } catch (error) {
-          if(error instanceof Error){
+          if (error instanceof Error) {
             alert({ message: <p>{error.message}</p>, title: <IntlMessage id='networkCreation' /> })
           }
           throw error
         }
       },
+      _handleChange: function (e) {
+        // Reason why values are initialized with empty string and not a undefined value
+        // Warning: A component is changing an uncontrolled input to be controlled.
+        // This is likely caused by the value changing from undefined to a defined value,
+        // which should not happen. Decide between using a controlled or uncontrolled input
+        // element for the lifetime of the component.
+        // More info: https://reactjs.org/link/controlled-components
+        const stateProperty = e.target.name
+        const { form } = this.state
+
+        if (form[stateProperty] !== undefined) {
+          this.state.form = {
+            ...form,
+            [stateProperty]: e.target.value,
+          }
+        }
+      },
       _resetForm: function () {
+        this.state.isBonded = false
         Object.keys(this.state.form).forEach(key => {
           this.state.form = {
             ...this.state.form,
             [key]: '',
           }
         })
-        this.state.isBonded = false
       },
       _toggleBonded: function () {
-        if(Array.isArray(this.state.form.pifsId)){
+        if (Array.isArray(this.state.form.pifsId)) {
           this.state.form.pifsId = ''
         } else {
           this.state.form.pifsId = []
@@ -154,7 +144,7 @@ const AddNetwork = withState<State, Props, Effects, Computed, ParentState, Paren
   },
   ({ effects, state }) => (
     <>
-      <form onSubmit={effects._createNetwork} ref={state.formRef}>
+      <form onSubmit={effects._createNetwork}>
         <div>
           <label>
             <IntlMessage id='bondedNetwork' />
@@ -166,7 +156,7 @@ const AddNetwork = withState<State, Props, Effects, Computed, ParentState, Paren
             <IntlMessage id='interface' />
           </label>
           <Select
-          displayEmpty
+            displayEmpty
             additionalProps={{ pifsMetrics: state.pifsMetrics }}
             options={state.collection}
             multiple={state.isBonded}
@@ -182,24 +172,13 @@ const AddNetwork = withState<State, Props, Effects, Computed, ParentState, Paren
           <label>
             <IntlMessage id='name' />
           </label>
-          <Input
-            name='nameLabel'
-            required
-            type='text'
-            value={state.form.nameLabel}
-            onChange={effects._handleChange}
-          />
+          <Input name='nameLabel' required type='text' value={state.form.nameLabel} onChange={effects._handleChange} />
         </div>
         <div>
           <label>
             <IntlMessage id='description' />
           </label>
-          <Input
-            name='description'
-            value={state.form.description}
-            type='text'
-            onChange={effects._handleChange}
-          />
+          <Input name='description' value={state.form.description} type='text' onChange={effects._handleChange} />
         </div>
         <div>
           <label>
@@ -223,7 +202,7 @@ const AddNetwork = withState<State, Props, Effects, Computed, ParentState, Paren
               <IntlMessage id='bondMode' />
             </label>
             <Select
-            onChange={effects._handleChange}
+              onChange={effects._handleChange}
               value={state.form.bondMode}
               options={BOND_MODE}
               name='bondMode'
