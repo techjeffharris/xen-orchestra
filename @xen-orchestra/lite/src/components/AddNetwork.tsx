@@ -211,6 +211,7 @@ const AddNetwork = withState<State, Props, Effects, Computed, ParentState, Paren
               <IntlMessage id='bondMode' />
             </label>
             <Select
+              displayEmpty
               name='bondMode'
               onChange={effects._handleChange}
               options={BOND_MODE}

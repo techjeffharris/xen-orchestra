@@ -7,7 +7,7 @@ import intlMessage from '../lang/en.json'
 // InstanceType<typeof FormattedMessage> not working: "Type [...] does not satisfy the constraint abstract new (...args: any) => any."
 // See https://formatjs.io/docs/react-intl/components/#formattedmessage
 interface Props extends MessageDescriptor {
-  children?: (chunks: React.ReactElement) => ReactElement
+  children?: (chunks: ReactElement) => ReactElement
   id?: keyof typeof intlMessage
   tagName?: ElementType
   values?: Record<string, ReactNode>
