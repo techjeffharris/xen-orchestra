@@ -117,6 +117,7 @@ const messages = {
   filterOnlyManaged: 'Managed disks',
   filterOnlyOrphaned: 'Orphaned disks',
   filterOnlyRegular: 'Normal disks',
+  filterOnlyRunningVms: 'Running VMs',
   filterOnlySnapshots: 'Snapshot disks',
   filterOnlyUnmanaged: 'Unmanaged disks',
   filterSaveAs: 'Save…',
@@ -767,6 +768,11 @@ const messages = {
   srsForget: 'Forget SRs',
   srRemoveButton: 'Remove this SR',
   srNoVdis: 'No VDIs in this storage',
+
+  // ----- SR disks tab -----
+  multipleActiveVdis: '{firstVdi} and {nVdis} more',
+  noActiveVdi: 'No active VDI',
+
   // ----- Pool general -----
   poolTitleRamUsage: 'Pool RAM usage:',
   poolRamUsage: '{used} used of {total} ({free} free)',
@@ -794,6 +800,8 @@ const messages = {
   setpoolMaster: 'Master',
   syslogRemoteHost: 'Remote syslog host',
   defaultMigrationNetwork: 'Default migration network',
+  syncNetbox: 'Synchronize with Netbox',
+  syncNetboxWarning: 'Are you sure you want to synchronize with Netbox?',
   // ----- Pool host tab -----
   hostNameLabel: 'Name',
   hostDescription: 'Description',
@@ -830,6 +838,9 @@ const messages = {
   addHostsErrorTitle: 'Adding host{nHosts, plural, one {} other {s}} failed',
   addHostNotHomogeneousErrorMessage: 'Host patches could not be homogenized.',
   disconnectServer: 'Disconnect',
+
+  // ----- Host item ------
+  noMoreMaintained: 'This host version is no longer maintained',
 
   // ----- Host actions ------
   disableMaintenanceMode: 'Disable maintenance mode',
@@ -1025,6 +1036,7 @@ const messages = {
   paraVirtualizedMode: 'Paravirtualization (PV)',
   hardwareVirtualizedMode: 'Hardware virtualization (HVM)',
   hvmModeWithPvDriversEnabled: 'Hardware virtualization with paravirtualization drivers enabled (PVHVM)',
+  pvInPvhMode: 'PV inside a PVH container (PV in PVH)',
   windowsUpdateTools: 'Windows Update tools',
 
   // ----- VM stat tab -----
@@ -1071,6 +1083,7 @@ const messages = {
   containerRestart: 'Restart this container',
 
   // ----- VM disk tab -----
+  rescanIsoSrs: 'Rescan all ISO SRs',
   vbdCreateDeviceButton: 'New disk',
   vdiAttachDevice: 'Attach disk',
   vdiAttachDeviceConfirm: 'The selected VDI is already attached to this VM. Are you sure you want to continue?',
@@ -1190,6 +1203,7 @@ const messages = {
   snapshotQuiesce: 'Quiesced snapshot',
   vmRevertSuccessfulTitle: 'Revert successful',
   vmRevertSuccessfulMessage: 'VM successfully reverted',
+  currentSnapshot: 'Current snapshot',
 
   // ----- VM backup tab -----
   goToBackupPage: 'Go to the backup page.',
@@ -1664,6 +1678,10 @@ const messages = {
   restartVmModalMessage: 'Are you sure you want to restart {name}?',
   stopVmModalTitle: 'Stop VM',
   stopVmModalMessage: 'Are you sure you want to stop {name}?',
+  vmHasNoTools: 'No guest tools',
+  vmHasNoToolsMessage: "The VM doesn't have Xen tools installed, which are required to properly stop or reboot it.",
+  confirmForceShutdown: 'Would you like to force shutdown the VM?',
+  confirmForceReboot: 'Would you like to force reboot the VM?',
   suspendVmsModalTitle: 'Suspend VM{vms, plural, one {} other {s}}',
   suspendVmsModalMessage: 'Are you sure you want to suspend {vms, number} VM{vms, plural, one {} other {s}}?',
   pauseVmsModalTitle: 'Pause VM{vms, plural, one {} other {s}}',

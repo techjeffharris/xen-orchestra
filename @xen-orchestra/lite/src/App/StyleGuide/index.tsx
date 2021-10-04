@@ -92,7 +92,7 @@ const App = withState<State, Props, Effects, Computed, ParentState, ParentEffect
               { name: 'Bar', value: 1 },
               { name: 'Foo', value: 2 },
             ]}
-            optionRender={{ render: item => item.name, value: 'value' }}
+            optionRender={{ render: (item:any) => item.name, value: 'value' }}
             value={state.selectValue}
           />
         </Render>

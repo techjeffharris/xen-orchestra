@@ -1,4 +1,5 @@
 import findKey from 'lodash/findKey.js'
+import pick from 'lodash/pick.js'
 import { BaseError } from 'make-error'
 import { createLogger } from '@xen-orchestra/log'
 import { fibonacci } from 'iterable-backoff'
@@ -224,7 +225,17 @@ export default class {
           objects.set(xoId, xoObject)
         }
       } catch (error) {
-        log.error('xapiObjectToXo', { error })
+        // only log the error if the object was already in `toRetry`
+        //
+        // otherwise there will be too many logs, some of them irrelevant (transient
+        // and simply due to the order objects are processed)
+        if (xapiId in toRetry) {
+          const { $pool, $ref, $type, uuid } = xapiObject
+          log.error('xapiObjectToXo', {
+            error,
+            xapiObject: { $pool: pick($pool, ['$ref', 'uuid']), $ref, $type, uuid },
+          })
+        }
 
         toRetry[xapiId] = xapiObject
       }
@@ -435,6 +446,12 @@ export default class {
 
     const xapi = this._xapis[id]
     delete this._xapis[id]
+
+    const serverIdsByPool = this._serverIdsByPool
+    const poolId = findKey(serverIdsByPool, _ => _ === xapi)
+    if (poolId !== undefined) {
+      delete serverIdsByPool[id]
+    }
 
     return xapi.disconnect()
   }

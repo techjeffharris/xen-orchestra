@@ -148,11 +148,15 @@ declare namespace backup {
 
   function listPoolMetadataBackups(_: {
     remotes: { [id: string]: Remote }
-  }): { [remoteId: string]: { [poolUuid: string]: object[] } }
+  }): {
+    [remoteId: string]: { [poolUuid: string]: object[] }
+  }
 
   function listVmBackups(_: {
     remotes: { [remoteId: string]: Remote }
-  }): { [remoteId: string]: { [vmUuid: string]: object[] } }
+  }): {
+    [remoteId: string]: { [vmUuid: string]: object[] }
+  }
 
   function listXoMetadataBackups(_: { remotes: { [id: string]: Remote } }): { [remoteId: string]: object[] }
 

@@ -1,5 +1,5 @@
 const ignoreErrors = require('promise-toolbox/ignoreErrors.js')
-const { asyncMapSettled } = require('@xen-orchestra/async-map')
+const { asyncMap, asyncMapSettled } = require('@xen-orchestra/async-map')
 const { formatDateTime } = require('@xen-orchestra/xapi')
 
 const { formatFilenameDate } = require('../_filenameDate.js')
@@ -29,7 +29,7 @@ exports.FullReplicationWriter = class FullReplicationWriter extends MixinReplica
     )
   }
 
-  async run({ timestamp, sizeContainer, stream }) {
+  async _run({ timestamp, sizeContainer, stream }) {
     const sr = this._sr
     const settings = this._settings
     const { job, scheduleId, vm } = this._backup
@@ -64,9 +64,11 @@ exports.FullReplicationWriter = class FullReplicationWriter extends MixinReplica
     const targetVm = await xapi.getRecord('VM', targetVmRef)
 
     await Promise.all([
-      targetVm.update_blocked_operations(
-        'start',
-        'Start operation for this vm is blocked, clone it if you want to use it.'
+      asyncMap(['start', 'start_on'], op =>
+        targetVm.update_blocked_operations(
+          op,
+          'Start operation for this vm is blocked, clone it if you want to use it.'
+        )
       ),
       targetVm.update_other_config({
         'xo:backup:sr': srUuid,
