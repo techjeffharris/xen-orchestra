@@ -87,6 +87,7 @@ const App = withState<State, Props, Effects, Computed, ParentState, ParentEffect
       <Container>
         <Render>
           <Select
+            displayEmpty
             onChange={effects.onChangeSelect}
             options={[
               { name: 'Bar', value: 1 },
@@ -97,17 +98,18 @@ const App = withState<State, Props, Effects, Computed, ParentState, ParentEffect
           />
         </Render>
         <Code>
-          {`const optionRender: Options<{ name: string; value: number; }> = {
+          {`const optionsRender: Options<{ name: string; value: number; }> = {
   render: item => item.name
-  value: 'value'
+  value: item => item.value
 }
 <Select
+  displayEmpty
   onChange={handleChange}
   options={[
     { name: 'Bar', value: 1 },
     { name: 'Foo', value: 2 },
   ]}
-  optionRender={optionRender}
+  optionsRender={optionsRender}
   value={state.selectValue}
 />`}
         </Code>
