@@ -145,8 +145,10 @@ export default class Acls extends Component {
   _getObjectPredicate = createSelector(
     () => this.state.typeFilters,
     () => this.state.someTypeFilters,
-    (typeFilters, someTypeFilters) => ({ type }) => !someTypeFilters || typeFilters[type]
-  )
+    (typeFilters, someTypeFilters) =>
+      ({ type }) =>
+        !someTypeFilters || typeFilters[type]
+    )
 
   _selectAll = () => {
     const { someTypeFilters, typeFilters } = this.state

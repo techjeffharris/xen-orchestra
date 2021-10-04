@@ -307,14 +307,16 @@ export default decorate([
         this.state._status = status
         this.state.page = 1
       },
-      restartVmJob: (_, params) => async (_, { log: { scheduleId, jobId } }) => {
-        await runBackupNgJob({
-          force: get(() => params.force),
-          id: jobId,
-          schedule: scheduleId,
-          vm: get(() => params.vm),
-        })
-      },
+      restartVmJob:
+        (_, params) =>
+        async (_, { log: { scheduleId, jobId } }) => {
+          await runBackupNgJob({
+            force: get(() => params.force),
+            id: jobId,
+            schedule: scheduleId,
+            vm: get(() => params.vm),
+          })
+        },
     },
     computed: {
       log: (_, { log, pools, vms }) => {

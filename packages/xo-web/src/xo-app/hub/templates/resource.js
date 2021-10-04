@@ -47,15 +47,8 @@ export default decorate([
     }),
     effects: {
       async install() {
-        const {
-          id,
-          name,
-          namespace,
-          markHubResourceAsInstalled,
-          markHubResourceAsInstalling,
-          templates,
-          version,
-        } = this.props
+        const { id, name, namespace, markHubResourceAsInstalled, markHubResourceAsInstalling, templates, version } =
+          this.props
         const { isTemplateInstalled } = this.state
         const resourceParams = await form({
           defaultValue: {

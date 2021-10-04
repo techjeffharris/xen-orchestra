@@ -141,9 +141,9 @@ const Action = decorate([
       disabled: ({ items }, { disabled, userData }) =>
         typeof disabled === 'function' ? disabled(items, userData) : disabled,
       handler:
-      ({ items }, { handler, userData }) =>
-      () =>
-        handler(items, userData),
+        ({ items }, { handler, userData }) =>
+        () =>
+          handler(items, userData),
       icon: ({ items }, { icon, userData }) => (typeof icon === 'function' ? icon(items, userData) : icon),
       items: (_, { items, grouped }) => (Array.isArray(items) || !grouped ? items : [items]),
       label: ({ items }, { label, userData }) => (typeof label === 'function' ? label(items, userData) : label),
