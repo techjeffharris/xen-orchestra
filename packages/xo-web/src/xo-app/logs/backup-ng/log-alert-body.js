@@ -363,11 +363,14 @@ export default decorate([
         const start = (page - 1) * ITEMS_PER_PAGE
         return tasksFilteredByStatus.slice(start, start + ITEMS_PER_PAGE)
       },
-      optionRenderer: ({ countByStatus }) => ({ label, value }) => (
-        <span>
-          {_(label)} ({countByStatus[value] || 0})
-        </span>
-      ),
+      optionRenderer:
+        ({ countByStatus }) =>
+        ({ label, value }) =>
+          (
+            <span>
+              {_(label)} ({countByStatus[value] || 0})
+            </span>
+          ),
       countByStatus: ({ preFilteredTasksLogs }) => ({
         all: get(() => preFilteredTasksLogs.length),
         ...countBy(preFilteredTasksLogs, 'status'),

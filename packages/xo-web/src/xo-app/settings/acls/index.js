@@ -148,7 +148,7 @@ export default class Acls extends Component {
     (typeFilters, someTypeFilters) =>
       ({ type }) =>
         !someTypeFilters || typeFilters[type]
-    )
+  )
 
   _selectAll = () => {
     const { someTypeFilters, typeFilters } = this.state

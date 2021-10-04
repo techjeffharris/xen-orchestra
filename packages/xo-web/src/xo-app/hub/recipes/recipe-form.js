@@ -45,9 +45,9 @@ export default decorate([
     },
     computed: {
       networkPredicate:
-      (_, { value: { pool } }) =>
-      network =>
-        pool.id === network.$pool,
+        (_, { value: { pool } }) =>
+        network =>
+          pool.id === network.$pool,
       srPredicate:
         (_, { value }) =>
         sr =>
