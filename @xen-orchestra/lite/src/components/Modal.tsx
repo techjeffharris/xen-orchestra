@@ -1,5 +1,5 @@
 import React from 'react'
-import { Dialog, DialogContent, DialogContentText, DialogActions, DialogTitle } from '@material-ui/core'
+import { Dialog, DialogContent, DialogContentText, DialogActions, DialogTitle } from '@mui/material'
 import { withState } from 'reaclette'
 
 import Button from './Button'
