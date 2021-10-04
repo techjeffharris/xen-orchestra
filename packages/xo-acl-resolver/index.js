@@ -22,8 +22,9 @@ const and =
       if (!checker(object, permission)) {
         return false
       }
-      return true
     }
+    return true
+  }
 
 // eslint-disable-next-line no-unused-vars
 const or =
@@ -33,8 +34,9 @@ const or =
       if (checker(object, permission)) {
         return true
       }
-      return false
     }
+    return false
+  }
 
 // -------------------------------------------------------------------
 

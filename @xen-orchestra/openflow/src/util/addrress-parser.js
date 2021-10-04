@@ -29,9 +29,9 @@ export default {
 
   stringToEth: (string, buffer, offset) => {
     const eth =
-    /^([0-9A-Fa-f]{2}):([0-9A-Fa-f]{2}):([0-9A-Fa-f]{2}):([0-9A-Fa-f]{2}):([0-9A-Fa-f]{2}):([0-9A-Fa-f]{2})$/.exec(
-      string
-    )
+      /^([0-9A-Fa-f]{2}):([0-9A-Fa-f]{2}):([0-9A-Fa-f]{2}):([0-9A-Fa-f]{2}):([0-9A-Fa-f]{2}):([0-9A-Fa-f]{2})$/.exec(
+        string
+      )
     assert(eth !== null)
     buffer.writeUInt8(parseInt(eth[1], 16), offset)
     buffer.writeUInt8(parseInt(eth[2], 16), offset + 1)

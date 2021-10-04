@@ -25,8 +25,10 @@ const vdiPredicate = vdi => !vdi.missing
     [vbd => vbd.is_cd_drive]
   )
 
-  const getIsoSrs = createGetObjectsOfType('SR').filter((_, { vm: { $pool } }) => sr =>
-    sr.$pool === $pool && sr.SR_type === 'iso'
+  const getIsoSrs = createGetObjectsOfType('SR').filter(
+    (_, { vm: { $pool } }) =>
+      sr =>
+        sr.$pool === $pool && sr.SR_type === 'iso'
   )
 
   const getMountedIso = createGetObject((state, props) => {
