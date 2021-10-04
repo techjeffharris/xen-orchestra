@@ -15,24 +15,26 @@ const authorized = () => true // eslint-disable-line no-unused-vars
 const forbiddden = () => false // eslint-disable-line no-unused-vars
 
 // eslint-disable-next-line no-unused-vars
-const and = (...checkers) => (object, permission) => {
-  for (const checker of checkers) {
-    if (!checker(object, permission)) {
-      return false
-    }
-  }
-  return true
-}
-
-// eslint-disable-next-line no-unused-vars
-const or = (...checkers) => (object, permission) => {
-  for (const checker of checkers) {
-    if (checker(object, permission)) {
+const and =
+  (...checkers) =>
+  (object, permission) => {
+    for (const checker of checkers) {
+      if (!checker(object, permission)) {
+        return false
+      }
       return true
     }
-  }
-  return false
-}
+
+// eslint-disable-next-line no-unused-vars
+const or =
+  (...checkers) =>
+  (object, permission) => {
+    for (const checker of checkers) {
+      if (checker(object, permission)) {
+        return true
+      }
+      return false
+    }
 
 // -------------------------------------------------------------------
 
