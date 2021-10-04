@@ -218,9 +218,9 @@ export default class TabGeneral extends Component {
             type === 'orphanedSnapshot' ? id : [map(baseCopies, 'id'), map(vdis, 'id'), map(snapshots, 'id')]
           )
         )
-      .sort()
-      .join(' ')})`
-  )}`
+        .sort()
+        .join(' ')})`
+    )}`
   )
 
   render() {
