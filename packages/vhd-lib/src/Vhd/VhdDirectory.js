@@ -4,6 +4,11 @@ import { fuFooter, fuHeader, checksumStruct } from '../_structs'
 import { test, set as setBitmap } from '../_bitmap'
 import { VhdAbstract } from './VhdAbstract'
 import assert from 'assert'
+import { promisify } from 'promise-toolbox'
+import zlib from 'zlib'
+
+const deflate = promisify(zlib.deflate)
+const inflate = promisify(zlib.inflate)
 
 const { debug } = createLogger('vhd-lib:VhdDirectory')
 
@@ -86,13 +91,15 @@ export class VhdDirectory extends VhdAbstract {
     // here we can implement compression and / or crypto
     const buffer = await this._handler.readFile(this.getChunkPath(partName))
 
+    const uncompressed = await inflate(buffer)
     return {
-      buffer: Buffer.from(buffer),
+      buffer: Buffer.from(uncompressed),
     }
   }
 
   async _writeChunk(partName, buffer) {
     assert(Buffer.isBuffer(buffer))
+    const compressed = await deflate(buffer, { level: 1 })
     // here we can implement compression and / or crypto
 
     // chunks can be in sub directories :  create direcotries if necessary
@@ -104,8 +111,7 @@ export class VhdDirectory extends VhdAbstract {
       currentPath += '/' + pathParts[i]
       await this._handler.mkdir(currentPath)
     }
-
-    return this._handler.writeFile(this.getChunkPath(partName), buffer)
+    return this._handler.writeFile(this.getChunkPath(partName), compressed)
   }
 
   // put block in subdirectories to limit impact when doing directory listing
