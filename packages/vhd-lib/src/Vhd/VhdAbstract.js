@@ -109,6 +109,10 @@ export class VhdAbstract {
   _readParentLocatorData(parentLocatorId, platformDataOffset, platformDataSpace) {
     throw new Error(`read Parent locator ${parentLocatorId} is not implemented`)
   }
+
+  _countNonEmptyBlocks(){
+    throw new Error(`_countNonEmptyBlocks is not implemented`)
+  }
   // common
   get batSize() {
     return computeBatSize(this.header.maxTableEntries)
@@ -158,11 +162,16 @@ export class VhdAbstract {
     }
   }
 
-  async *blocks() {
-    const nBlocks = this.header.maxTableEntries
+  async *blocks(yieldEmptyBlocks=false) {
+    const emptyBlock = Buffer.alloc(this.fullBlockSize)
+
     for (let blockId = 0; blockId < nBlocks; ++blockId) {
-      if (await this.containsBlock(blockId)) {
+      if (this.containsBlock(blockId)) {
         yield await this.readBlock(blockId)
+      } else {
+        if(yieldEmptyBlocks){
+          yield emptyBlock
+        }
       }
     }
   }
