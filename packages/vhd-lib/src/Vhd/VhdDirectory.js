@@ -7,8 +7,8 @@ import assert from 'assert'
 import { promisify } from 'promise-toolbox'
 import zlib from 'zlib'
 
-const deflate = promisify(zlib.deflate)
-const inflate = promisify(zlib.inflate)
+const gzip = promisify(zlib.deflate)
+const gunzip = promisify(zlib.inflate)
 
 const { debug } = createLogger('vhd-lib:VhdDirectory')
 
@@ -53,6 +53,7 @@ export class VhdDirectory extends VhdAbstract {
     // involved writing (that is, O_WRONLY or O_RDWR is set).
     // reading the header ensure we have a well formed directory immediatly
     await vhd.readHeaderAndFooter()
+    await vhd.readMetadata()
     return {
       dispose: () => {},
       value: vhd,
@@ -68,10 +69,17 @@ export class VhdDirectory extends VhdAbstract {
     }
   }
 
-  constructor(handler, path) {
+  constructor(handler, path, opts = {}) {
     super()
     this._handler = handler
     this._path = path
+    this._metadata = {
+      compression: {
+        type: 'gzip',
+        options: { level: 1 }
+      },
+      ...opts
+    }
   }
 
   async readBlockAllocationTable() {
@@ -88,19 +96,17 @@ export class VhdDirectory extends VhdAbstract {
   }
 
   async _readChunk(partName) {
-    // here we can implement compression and / or crypto
     const buffer = await this._handler.readFile(this.getChunkPath(partName))
 
-    const uncompressed = await inflate(buffer)
+    const uncompressed = await this.#uncompress(buffer)
     return {
-      buffer: Buffer.from(uncompressed),
+      buffer: Buffer.from(uncompressed)
     }
   }
 
   async _writeChunk(partName, buffer) {
     assert(Buffer.isBuffer(buffer))
-    const compressed = await deflate(buffer, { level: 1 })
-    // here we can implement compression and / or crypto
+    const compressed = await this.#compress(buffer)
 
     // chunks can be in sub directories :  create direcotries if necessary
     const pathParts = partName.split('/')
@@ -111,6 +117,7 @@ export class VhdDirectory extends VhdAbstract {
       currentPath += '/' + pathParts[i]
       await this._handler.mkdir(currentPath)
     }
+
     return this._handler.writeFile(this.getChunkPath(partName), compressed)
   }
 
@@ -158,12 +165,13 @@ export class VhdDirectory extends VhdAbstract {
     await this._writeChunk('footer', rawFooter)
   }
 
-  writeHeader() {
+  async writeHeader() {
     const { header } = this
     const rawHeader = fuHeader.pack(header)
     header.checksum = checksumStruct(rawHeader, fuHeader)
     debug(`Write header  (checksum=${header.checksum}). (data=${rawHeader.toString('hex')})`)
-    return this._writeChunk('header', rawHeader)
+    await this._writeChunk('header', rawHeader)
+    await this.writeMetadata()
   }
 
   writeBlockAllocationTable() {
@@ -192,5 +200,38 @@ export class VhdDirectory extends VhdAbstract {
   async _writeParentLocatorData(id, data) {
     await this._writeChunk('parentLocatorEntry' + id, data)
     this.header.parentLocatorEntry[id].platformDataOffset = 0
+  }
+
+  async #uncompress(buffer) {
+    const { compression } = this._metadata
+
+    if (!compression) {
+      return buffer
+    }
+    if (compression.type === 'gzip') {
+      return await gunzip(buffer)
+    }
+    throw new Error(`Compression type ${compression.type} is not supported`)
+  }
+
+  async #compress(buffer) {
+    const { compression } = this._metadata
+
+    if (!compression) {
+      return buffer
+    }
+    if (compression.type === 'gzip') {
+      return await gzip(buffer, compression.options)
+    }
+    throw new Error(`Compression type ${compression.type} is not supported`)
+  }
+
+  async writeMetadata() {
+    await this._handler.writeFile(this._path + '/metadata.json', JSON.stringify(this._metadata))
+  }
+
+  async readMetadata() {
+    const buf = Buffer.from(await this._handler.readFile(this._path + '/metadata.json'), 'utf-8')
+    this._metadata = JSON.parse(buf.toString())
   }
 }
