@@ -7,8 +7,8 @@ import assert from 'assert'
 import { promisify } from 'promise-toolbox'
 import zlib from 'zlib'
 
-const gzip = promisify(zlib.deflate)
-const gunzip = promisify(zlib.inflate)
+const gzip = promisify(zlib.gzip)
+const gunzip = promisify(zlib.gunzip)
 
 const { debug } = createLogger('vhd-lib:VhdDirectory')
 
@@ -52,8 +52,7 @@ export class VhdDirectory extends VhdAbstract {
     // EISDIR pathname refers to a directory and the access requested
     // involved writing (that is, O_WRONLY or O_RDWR is set).
     // reading the header ensure we have a well formed directory immediatly
-    await vhd.readHeaderAndFooter()
-    await vhd.readMetadata()
+    await Promise.all([vhd.readHeaderAndFooter(), vhd.#readMetadata()])
     return {
       dispose: () => {},
       value: vhd,
@@ -69,17 +68,20 @@ export class VhdDirectory extends VhdAbstract {
     }
   }
 
-  constructor(handler, path, opts = {}) {
+  constructor(
+    handler,
+    path,
+    opts = {
+      compression: {
+        type: 'gzip',
+        options: { level: 1 },
+      },
+    }
+  ) {
     super()
     this._handler = handler
     this._path = path
-    this._metadata = {
-      compression: {
-        type: 'gzip',
-        options: { level: 1 }
-      },
-      ...opts
-    }
+    this._metadata = opts
   }
 
   async readBlockAllocationTable() {
@@ -100,7 +102,7 @@ export class VhdDirectory extends VhdAbstract {
 
     const uncompressed = await this.#uncompress(buffer)
     return {
-      buffer: Buffer.from(uncompressed)
+      buffer: Buffer.from(uncompressed),
     }
   }
 
@@ -171,7 +173,7 @@ export class VhdDirectory extends VhdAbstract {
     header.checksum = checksumStruct(rawHeader, fuHeader)
     debug(`Write header  (checksum=${header.checksum}). (data=${rawHeader.toString('hex')})`)
     await this._writeChunk('header', rawHeader)
-    await this.writeMetadata()
+    await this.#writeMetadata()
   }
 
   writeBlockAllocationTable() {
@@ -205,7 +207,7 @@ export class VhdDirectory extends VhdAbstract {
   async #uncompress(buffer) {
     const { compression } = this._metadata
 
-    if (!compression) {
+    if (compression === undefined) {
       return buffer
     }
     if (compression.type === 'gzip') {
@@ -217,7 +219,7 @@ export class VhdDirectory extends VhdAbstract {
   async #compress(buffer) {
     const { compression } = this._metadata
 
-    if (!compression) {
+    if (compression === undefined) {
       return buffer
     }
     if (compression.type === 'gzip') {
@@ -226,11 +228,11 @@ export class VhdDirectory extends VhdAbstract {
     throw new Error(`Compression type ${compression.type} is not supported`)
   }
 
-  async writeMetadata() {
+  async #writeMetadata() {
     await this._handler.writeFile(this._path + '/metadata.json', JSON.stringify(this._metadata))
   }
 
-  async readMetadata() {
+  async #readMetadata() {
     const buf = Buffer.from(await this._handler.readFile(this._path + '/metadata.json'), 'utf-8')
     this._metadata = JSON.parse(buf.toString())
   }
