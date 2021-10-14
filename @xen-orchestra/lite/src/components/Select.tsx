@@ -8,22 +8,16 @@ import IntlMessage from './IntlMessage'
 
 type AdditionalProps = Record<string, any>
 
-export type Options<T> = {
-  render: { (item: T, additionalProps?: AdditionalProps): React.ReactNode } | keyof T
-  value: { (item: T, additionalProps?: AdditionalProps): string | number } | keyof T
-}
-
 interface ParentState {}
 
-interface State {
-  getFromProperty: (property: string) => (item: any, additionalProps?: AdditionalProps) => any
-}
+interface State {}
 
 interface Props extends SelectProps {
   additionalProps?: AdditionalProps
   onChange: (e: React.ChangeEvent<{ value: Props['value'] }>) => void
   options: any[] | undefined
-  optionRender: Options<any>
+  optionRenderer?: any
+  valueRenderer?: any
   value: any
 }
 
@@ -47,46 +41,44 @@ const useStyles = makeStyles((theme: Theme) =>
 
 const Select = withState<State, Props, Effects, Computed, ParentState, ParentEffects>(
   {
-    initialState: ({ optionRender }) => ({
-      getFromProperty: (property: string) => (item, additionalProps) =>
-        typeof iteratee(property)(optionRender) === 'string'
-          ? item[iteratee(property)(optionRender)]
-          : iteratee(property)(optionRender)(item, additionalProps),
-    }),
     computed: {
-      value: state => (item, additionalProps) => state.getFromProperty('value')(item, additionalProps),
-      render: state => (item, additionalProps) => state.getFromProperty('render')(item, additionalProps),
+      value: (_, { valueRenderer }) => iteratee(valueRenderer),
+      render: (_, { optionRenderer }) => iteratee(optionRenderer),
     },
   },
-  ({
-    additionalProps,
-    effects,
-    multiple,
-    options,
-    optionRender,
-    resetState,
-    state,
-    required,
-    displayEmpty = true,
-    ...props
-  }) => (
-    <FormControl className={useStyles().formControl}>
-      <SelectMaterialUi multiple={multiple} required={required} displayEmpty={displayEmpty} {...props}>
-        {!multiple && (
-          <MenuItem value=''>
-            <em>
-              <IntlMessage id='none' />
-            </em>
-          </MenuItem>
-        )}
-        {options?.map(item => (
-          <MenuItem key={state.value(item, additionalProps)} value={state.value(item, additionalProps)}>
-            {state.render(item, additionalProps)}
-          </MenuItem>
-        ))}
-      </SelectMaterialUi>
-    </FormControl>
-  )
+  ({ additionalProps, displayEmpty = true, effects, multiple, options, required, resetState, state, ...props }) => {
+    return (
+      <FormControl className={useStyles().formControl}>
+        <SelectMaterialUi multiple={multiple} required={required} displayEmpty={displayEmpty} {...props}>
+          {!multiple && (
+            <MenuItem value=''>
+              <em>
+                <IntlMessage id='none' />
+              </em>
+            </MenuItem>
+          )}
+          {options?.map(item => {
+            const value =
+              typeof state.value(item, additionalProps) === 'object'
+                ? item.value ?? item.id ?? item.$id ?? console.error(`Please provide a valueRenderer props for ${item}`)
+                : state.value(item, additionalProps)
+            const render =
+              typeof state.render(item, additionalProps) === 'object'
+                ? item.name ??
+                  item.label ??
+                  item.nameLabel ??
+                  console.error(`Please provide an optionRenderer props for ${item}`)
+                : state.render(item, additionalProps)
+            return (
+              <MenuItem key={value} value={value}>
+                {render}
+              </MenuItem>
+            )
+          })}
+        </SelectMaterialUi>
+      </FormControl>
+    )
+  }
 )
 
 export default Select
