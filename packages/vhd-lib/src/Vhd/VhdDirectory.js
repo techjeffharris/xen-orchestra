@@ -50,7 +50,7 @@ export class VhdDirectory extends VhdAbstract {
     await vhd.readHeaderAndFooter()
     return {
       dispose: () => {},
-      value: vhd
+      value: vhd,
     }
   }
 
@@ -59,7 +59,7 @@ export class VhdDirectory extends VhdAbstract {
     const vhd = new VhdDirectory(handler, path)
     return {
       dispose: () => {},
-      value: vhd
+      value: vhd,
     }
   }
 
@@ -87,7 +87,7 @@ export class VhdDirectory extends VhdAbstract {
     const buffer = await this._handler.readFile(this.getChunkPath(partName))
 
     return {
-      buffer: Buffer.from(buffer)
+      buffer: Buffer.from(buffer),
     }
   }
 
@@ -134,7 +134,7 @@ export class VhdDirectory extends VhdAbstract {
       id: blockId,
       bitmap: buffer.slice(0, this.bitmapSize),
       data: buffer.slice(this.bitmapSize),
-      buffer
+      buffer,
     }
   }
   ensureBatSize() {
@@ -167,11 +167,13 @@ export class VhdDirectory extends VhdAbstract {
     return this._writeChunk('bat', this.#blockTable)
   }
 
-  // only works if data are in the same bucket
+  // only works if data are in the same handler
   // and if the full block is modified in child ( which is the case whit xcp)
 
-  coalesceBlock(child, blockId) {
-    this._handler.copy(child.getChunkPath(blockId), this.getChunkPath(blockId))
+  async coalesceBlock(child, blockId) {
+    assert.strictEqual(this._handler, child._handler)
+    this._handler.copy(child._getBlockPath(blockId), this.getChunkPath(blockId))
+    return await this._handler.getSize(this.getChunkPath(blockId))
   }
 
   async writeEntireBlock(block) {
