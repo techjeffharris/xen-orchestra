@@ -62,10 +62,6 @@ export class VhdFile extends VhdAbstract {
     this.#blockTable = blocktable
   }
 
-  get batSize() {
-    return computeBatSize(this.header.maxTableEntries)
-  }
-
   set header(header) {
     super.header = header
     const size = this.batSize

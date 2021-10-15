@@ -1,6 +1,16 @@
 import { computeBatSize, sectorsRoundUpNoZero, sectorsToBytes } from './_utils'
-import { PLATFORM_NONE, SECTOR_SIZE, PLATFORM_W2KU, PARENT_LOCATOR_ENTRIES } from '../_constants'
+import {
+  PLATFORM_NONE,
+  SECTOR_SIZE,
+  PLATFORM_W2KU,
+  PARENT_LOCATOR_ENTRIES,
+  FOOTER_SIZE,
+  HEADER_SIZE,
+  BLOCK_UNUSED,
+} from '../_constants'
 import assert from 'assert'
+import asyncIteratorToStream from 'async-iterator-to-stream/dist'
+import { checksumStruct, fuFooter, fuHeader } from '../_structs'
 
 export class VhdAbstract {
   #header
@@ -136,7 +146,7 @@ export class VhdAbstract {
     return {
       platformCode,
       id,
-      data
+      data,
     }
   }
 
@@ -144,14 +154,14 @@ export class VhdAbstract {
     await this.writeParentLocator({
       id: 0,
       code: PLATFORM_W2KU,
-      data: Buffer.from(fileNameString, 'utf16le')
+      data: Buffer.from(fileNameString, 'utf16le'),
     })
 
     for (let i = 1; i < PARENT_LOCATOR_ENTRIES; i++) {
       await this.writeParentLocator({
         id: i,
         code: PLATFORM_NONE,
-        data: Buffer.alloc(0)
+        data: Buffer.alloc(0),
       })
     }
   }
@@ -163,5 +173,70 @@ export class VhdAbstract {
         yield await this.readBlock(blockId)
       }
     }
+  }
+
+  vhdStream() {
+    const { header, footer, batSize } = this
+    const rawFooter = fuFooter.pack(footer)
+    checksumStruct(rawFooter, fuFooter)
+
+    // compute parent locator place and size
+    // update them in header
+    // update checksum in header
+
+    let offset = FOOTER_SIZE + HEADER_SIZE + batSize
+    for (let i = 0; i < PARENT_LOCATOR_ENTRIES; i++) {
+      if (header.parentLocatorEntry[i].platformDataSpace > 0) {
+        header.parentLocatorEntry[i].platformDataOffset = offset
+        offset += header.parentLocatorEntry[i].platformDataSpace
+      }
+    }
+
+    const rawHeader = fuHeader.pack(header)
+    checksumStruct(rawHeader, fuHeader)
+
+    assert.strictEqual(offset % SECTOR_SIZE, 0)
+
+    const bat = Buffer.allocUnsafe(batSize)
+    let offsetSector = offset / SECTOR_SIZE
+    const blockSizeInSectors = this.fullBlockSize / SECTOR_SIZE
+
+    // compute BAT , blocks starts after parent locator entries
+    for (let i = 0; i < header.maxTableEntries; i++) {
+      if (this.containsBlock(i)) {
+        bat.writeUInt32BE(offsetSector, i * 4)
+        offsetSector += blockSizeInSectors
+      } else {
+        bat.writeUInt32BE(BLOCK_UNUSED)
+      }
+    }
+    const fileSize = offsetSector * SECTOR_SIZE + FOOTER_SIZE
+
+    async function* iterator() {
+      yield rawFooter
+      yield rawHeader
+      yield bat
+
+      // yield parent locator entries
+      for (let i = 0; i < PARENT_LOCATOR_ENTRIES; i++) {
+        const parentLocator = await this.readParentLocator(i)
+        yield parentLocator.data
+      }
+
+      // yield all blocks
+      // since contains() can be costly for synthetic vhd, use the computed bat
+      for (let i = 0; i < header.maxTableEntries; i++) {
+        if (bat.readUInt32BE(i) !== BLOCK_UNUSED) {
+          const block = this.readBlock(i)
+          yield block.buffer
+        }
+      }
+      // yield footer again
+      yield rawFooter
+    }
+
+    const stream = asyncIteratorToStream(iterator())
+    stream.length = fileSize
+    return stream
   }
 }
