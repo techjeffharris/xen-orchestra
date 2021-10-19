@@ -4,7 +4,7 @@ import { fuFooter, fuHeader, checksumStruct } from '../_structs'
 import { test, set as setBitmap } from '../_bitmap'
 import { VhdAbstract } from './VhdAbstract'
 import assert from 'assert'
-import { promisify } from 'promise-toolbox'
+import promisify from 'promise-toolbox/promisify'
 import zlib from 'zlib'
 
 const gzip = promisify(zlib.gzip)
