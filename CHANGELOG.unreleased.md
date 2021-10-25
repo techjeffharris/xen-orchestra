@@ -9,6 +9,7 @@
 
 - [Tasks] Filter out short tasks using a default filter (PR [#5921](https://github.com/vatesfr/xen-orchestra/pull/5921))
 - [Jobs] Ability to copy a job ID (PR [#5951](https://github.com/vatesfr/xen-orchestra/pull/5951))
+- [S3] Ability to authorize self signed certificates for S3 remote
 
 ### Bug fixes
 
@@ -38,5 +39,5 @@
 - @xen-orchestra/backup minor
 - @xen-orchestra/proxy minor
 - vhd-cli minor
-- xo-server patch
+- xo-server minor
 - xo-web minor
