@@ -29,12 +29,14 @@ const StyledButton = styled.button`
 
 const Button = withState<State, Props, Effects, Computed, ParentState, ParentEffects>(
   {},
-  ({ state, effects, resetState, icon, children, ...props }) => (
-    <StyledButton {...props}>
+  ({ state, effects, resetState, icon, children, ...props }) => {
+    return <StyledButton {...props}>
       {icon !== undefined && <><Icon icon={icon} /> </>}
       {children}
     </StyledButton>
-  )
+
+  }
 )
+
 
 export default Button
