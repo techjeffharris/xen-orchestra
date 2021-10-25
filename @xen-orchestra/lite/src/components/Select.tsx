@@ -15,10 +15,10 @@ interface State {}
 interface Props extends SelectProps {
   additionalProps?: AdditionalProps
   onChange: (e: React.ChangeEvent<{ value: Props['value'] }>) => void
+  optionRenderer?: string | { (item: any): number | string }
   options: any[] | undefined
-  optionRenderer?: any
-  valueRenderer?: any
   value: any
+  valueRenderer?: string | { (item: any): number | string }
 }
 
 interface ParentEffects {}
@@ -26,8 +26,9 @@ interface ParentEffects {}
 interface Effects {}
 
 interface Computed {
-  value: (item: any, additionalProps?: AdditionalProps) => number | string
-  render: (item: any, additionalProps?: AdditionalProps) => React.ReactNode
+  renderings?: JSX.Element[]
+  renderOption: (item: any, additionalProps?: AdditionalProps) => React.ReactNode
+  renderValue: (item: any, additionalProps?: AdditionalProps) => number | string
 }
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -42,43 +43,50 @@ const useStyles = makeStyles((theme: Theme) =>
 const Select = withState<State, Props, Effects, Computed, ParentState, ParentEffects>(
   {
     computed: {
-      value: (_, { valueRenderer }) => iteratee(valueRenderer),
-      render: (_, { optionRenderer }) => iteratee(optionRenderer),
+      renderings: (state, { additionalProps, options }) =>
+        options?.map(item => {
+          const render =
+            typeof state.renderOption(item, additionalProps) === 'object'
+              ? item.name ?? item.label ?? item.name_label ?? undefined
+              : state.renderOption(item, additionalProps)
+          const value =
+            typeof state.renderValue(item, additionalProps) === 'object'
+              ? item.value ?? item.id ?? item.$id ?? undefined
+              : state.renderValue(item, additionalProps)
+
+          if (render === undefined) {
+            console.error('optionRenderer is undefined')
+          }
+          if (value === undefined) {
+            console.error('valueRenderer is undefined')
+          }
+
+          return (
+            <MenuItem key={value} value={value}>
+              {render}
+            </MenuItem>
+          )
+        }),
+      // @ts-ignore
+      renderOption: (_, { optionRenderer }) => iteratee(optionRenderer),
+      // @ts-ignore
+      renderValue: (_, { valueRenderer }) => iteratee(valueRenderer),
     },
   },
-  ({ additionalProps, displayEmpty = true, effects, multiple, options, required, resetState, state, ...props }) => {
-    return (
-      <FormControl className={useStyles().formControl}>
-        <SelectMaterialUi multiple={multiple} required={required} displayEmpty={displayEmpty} {...props}>
-          {!multiple && (
-            <MenuItem value=''>
-              <em>
-                <IntlMessage id='none' />
-              </em>
-            </MenuItem>
-          )}
-          {options?.map(item => {
-            const value =
-              typeof state.value(item, additionalProps) === 'object'
-                ? item.value ?? item.id ?? item.$id ?? console.error(`Please provide a valueRenderer props for ${item}`)
-                : state.value(item, additionalProps)
-            const render =
-              typeof state.render(item, additionalProps) === 'object'
-                ? item.name ??
-                  item.label ??
-                  item.nameLabel ??
-                  console.error(`Please provide an optionRenderer props for ${item}`)
-                : state.render(item, additionalProps)
-            return (
-              <MenuItem key={value} value={value}>
-                {render}
-              </MenuItem>
-            )
-          })}
-        </SelectMaterialUi>
-      </FormControl>
-    )
-  }
+  ({ additionalProps, displayEmpty = true, effects, multiple, options, required, resetState, state, ...props }) => (
+    <FormControl className={useStyles().formControl}>
+      <SelectMaterialUi multiple={multiple} required={required} displayEmpty={displayEmpty} {...props}>
+        {!multiple && (
+          <MenuItem value=''>
+            <em>
+              <IntlMessage id='none' />
+            </em>
+          </MenuItem>
+        )}
+        {state.renderings?.map(rendering => rendering)}
+      </SelectMaterialUi>
+    </FormControl>
+  )
 )
 
 export default Select
