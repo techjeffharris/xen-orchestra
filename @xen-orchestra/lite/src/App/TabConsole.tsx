@@ -39,6 +39,14 @@ const TabConsole = withState<State, Props, Effects, Computed, ParentState, Paren
       sendCtrlAltDel: undefined,
     }),
     effects: {
+      initialize: function(e){
+        window.addEventListener('resize', () => {
+          console.log('Window resized')
+        })
+        document.addEventListener('resize', () => {
+          console.log('Document resized')
+        })
+      },
       scaleConsole: function (e) {
         this.state.consoleScale = +e.currentTarget.value
 

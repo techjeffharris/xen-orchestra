@@ -3,59 +3,78 @@ import { Dialog, DialogContent, DialogContentText, DialogActions, DialogTitle } 
 import { withState } from 'reaclette'
 
 import Button from './Button'
+import Icon, { IconName } from './Icon'
 import IntlMessage from './IntlMessage'
 
-type AdditionalButton = {
-  index: number | string
+type ModalButton = {
   label: React.ReactNode
-  onClick: () => void
+  level: string
+  reason?: unknown
+  value?: unknown
 }
 
 interface GeneralParamsModal {
-  additionalButton?: AdditionalButton[]
-  displayCancelButton?: boolean
-  message: JSX.Element
-  title: JSX.Element
+  icon: IconName
+  message: string | JSX.Element
+  title: string | JSX.Element
 }
 
-interface ParamsModal extends GeneralParamsModal {
-  onReject: (reason?: unknown) => void
-  onSuccess: (value: string) => void
+interface ModalParams extends GeneralParamsModal {
+  buttonList: ModalButton[]
 }
 
 let instance: EffectContext<State, Props, Effects, Computed, ParentState, ParentEffects> | undefined
-const modal = ({ additionalButton, displayCancelButton = true, message, onReject, onSuccess, title }: ParamsModal) => {
-  if (instance === undefined) {
-    throw new Error('No modal instance')
-  }
+const modal = ({ buttonList, icon, message, title }: ModalParams) =>
+  new Promise((resolve, reject) => {
+    if (instance === undefined) {
+      throw new Error('No modal instance')
+    }
+    instance.state.buttonList = buttonList
+    instance.state.icon = icon
+    instance.state.message = message
+    instance.state.onReject = reject
+    instance.state.onSuccess = resolve
+    instance.state.showModal = true
+    instance.state.title = title
+  })
 
-  instance.state.additionalButton = additionalButton
-  instance.state.displayCancelButton = displayCancelButton
-  instance.state.message = message
-  instance.state.onReject = onReject
-  instance.state.onSuccess = onSuccess
-  instance.state.showModal = true
-  instance.state.title = title
+export const alert = (params: GeneralParamsModal): Promise<unknown> => {
+  const buttonList = [
+    {
+      label: <IntlMessage id='ok' />,
+      level: 'primary',
+      value: 'success',
+    },
+  ]
+  return modal({ ...params, buttonList })
 }
 
-export const alert = (params: GeneralParamsModal): Promise<string> =>
-  new Promise((resolve, reject) =>
-    modal({ displayCancelButton: false, onReject: reject, onSuccess: resolve, ...params })
-  )
-
-export const confirm = (params: GeneralParamsModal): Promise<string> =>
-  new Promise((resolve, reject) => modal({ onReject: reject, onSuccess: resolve, ...params }))
+export const confirm = (params: GeneralParamsModal): Promise<unknown> => {
+  const buttonList = [
+    {
+      label: <IntlMessage id='confirm' />,
+      level: 'primary',
+      value: 'success',
+    },
+    {
+      label: <IntlMessage id='cancel' />,
+      level: 'danger',
+      reason: 'reject',
+    },
+  ]
+  return modal({ ...params, buttonList })
+}
 
 interface ParentState {}
 
 interface State {
-  additionalButton?: AdditionalButton[]
-  displayCancelButton?: boolean
-  message?: JSX.Element
-  onReject?: () => void
-  onSuccess?: (value: string) => void
+  buttonList?: ModalButton[]
+  icon?: IconName
+  message?: string | JSX.Element
+  onReject?: (reason: unknown) => void
+  onSuccess?: (value: unknown) => void
   showModal: boolean
-  title?: JSX.Element
+  title?: string | JSX.Element
 }
 
 interface Props {}
@@ -64,17 +83,18 @@ interface ParentEffects {}
 
 interface Effects {
   _closeModal: () => void
-  _reject: () => void
-  _success: () => void
+  _reject: (reason: unknown) => void
 }
 
-interface Computed {}
+interface Computed {
+  buttons?: ((cb: () => void) => JSX.Element)[]
+}
 
 const Modal = withState<State, Props, Effects, Computed, ParentState, ParentEffects>(
   {
     initialState: () => ({
-      additionalButton: undefined,
-      displayCancelButton: false,
+      buttonList: undefined,
+      icon: undefined,
       message: undefined,
       onReject: undefined,
       onSuccess: undefined,
@@ -91,40 +111,46 @@ const Modal = withState<State, Props, Effects, Computed, ParentState, ParentEffe
       _closeModal: function () {
         this.state.showModal = false
       },
-      _reject: function () {
-        this.state.onReject?.()
-        this.effects._closeModal()
-      },
-      _success: function () {
-        this.state.onSuccess?.('Success')
+      _reject: function (reason) {
+        this.state.onReject?.(reason)
         this.effects._closeModal()
       },
     },
+    computed: {
+      buttons: ({ buttonList, onSuccess, onReject }) =>
+        buttonList?.map((button, index) => {
+          const _button = (cb: () => void) => {
+            const onClick = () => {
+              if (button.value !== undefined) {
+                onSuccess?.(button.value)
+              } else {
+                onReject?.(button.reason)
+              }
+              cb()
+            }
+            return (
+              <Button key={index} onClick={onClick}>
+                {button.label}
+              </Button>
+            )
+          }
+          return _button
+        }),
+    },
   },
   ({ effects, state }) => {
-    const { _reject, _success } = effects
-    const { additionalButton, displayCancelButton, message, showModal, title } = state
+    const { _closeModal, _reject } = effects
+    const { buttons, icon, message, showModal, title } = state
+
     return showModal ? (
       <Dialog open={showModal} onClose={_reject}>
-        <DialogTitle>{title}</DialogTitle>
+        <DialogTitle>
+          {icon !== undefined && <Icon icon={icon} />} {title}
+        </DialogTitle>
         <DialogContent>
           <DialogContentText>{message}</DialogContentText>
         </DialogContent>
-        <DialogActions>
-          {displayCancelButton && (
-            <Button onClick={_reject} color='primary'>
-              <IntlMessage id='cancel' />
-            </Button>
-          )}
-          <Button onClick={_success} color='primary'>
-            <IntlMessage id='ok' />
-          </Button>
-          {additionalButton?.map(({ index, label, ...props }) => (
-            <Button key={index} {...props}>
-              {label}
-            </Button>
-          ))}
-        </DialogActions>
+        <DialogActions>{buttons?.map(button => button(_closeModal))}</DialogActions>
       </Dialog>
     ) : null
   }

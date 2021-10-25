@@ -6,6 +6,8 @@ import { withState } from 'reaclette'
 
 import Button from '../../components/Button'
 import Icon from '../../components/Icon'
+import { alert, confirm } from '../../components/Modal'
+import IntlMessage from '../../components/IntlMessage'
 
 interface ParentState {}
 
@@ -72,6 +74,26 @@ const App = withState<State, Props, Effects, Computed, ParentState, ParentEffect
         <Code>{`// https://fontawesome.com/icons
 <Icon icon='truck' />
 <Icon icon='truck' size='2x' />`}</Code>
+      </Container>
+      <h2>Modal</h2>
+      <Container>
+        <Render>
+          <Button onClick={() => alert({ message: 'This is a alert message', title: 'Alert modal', icon: 'info' })}>
+            Alert
+          </Button>
+          <Button
+            onClick={() =>
+              confirm({
+                message: 'This is a confirm modal test',
+                title: 'Confirm modal',
+                icon: 'download',
+              })
+            }
+          >
+            Confirm
+          </Button>
+        </Render>
+        <Code>{`<Button>Button></Button>`}</Code>
       </Container>
     </Page>
   )
