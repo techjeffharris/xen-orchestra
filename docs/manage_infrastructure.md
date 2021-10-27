@@ -497,7 +497,7 @@ As specified in the [documentation](https://xcp-ng.org/docs/requirements.html#po
 
 - Even with matching CPU vendors, in the case of different CPU models XCP-ng will scale the pool CPU ability to the CPU having the least instructions.
 - All the hosts in a pool must run the same XCP-ng version.
-  :::
+:::
 
 ### Creating a pool
 
