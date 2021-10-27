@@ -202,6 +202,7 @@ exports.importDeltaVm = defer(async function importDeltaVm(
       blocked_operations: {
         ...vmRecord.blocked_operations,
         start: 'Importing…',
+        start_on: 'Importing…',
       },
       ha_always_run: false,
       is_a_template: false,
@@ -304,9 +305,6 @@ exports.importDeltaVm = defer(async function importDeltaVm(
         await vdi.$importContent(stream, { cancelToken, format: 'vhd' })
       }
     }),
-
-    // Wait for VDI export tasks (if any) termination.
-    Promise.all(Object.values(streams).map(stream => stream.task)),
 
     // Create VIFs.
     asyncMap(Object.values(deltaVm.vifs), vif => {

@@ -140,7 +140,10 @@ const Action = decorate([
     computed: {
       disabled: ({ items }, { disabled, userData }) =>
         typeof disabled === 'function' ? disabled(items, userData) : disabled,
-      handler: ({ items }, { handler, userData }) => () => handler(items, userData),
+      handler:
+        ({ items }, { handler, userData }) =>
+        () =>
+          handler(items, userData),
       icon: ({ items }, { icon, userData }) => (typeof icon === 'function' ? icon(items, userData) : icon),
       items: (_, { items, grouped }) => (Array.isArray(items) || !grouped ? items : [items]),
       label: ({ items }, { label, userData }) => (typeof label === 'function' ? label(items, userData) : label),
@@ -797,6 +800,29 @@ class SortedTable extends Component {
             targetNodeSelector={shortcutsTarget}
           />
         )}
+        <Container className='mb-1 p-0'>
+          <SingleLineRow>
+            <Col mediumSize={7}>
+              {displayPagination &&
+                (paginationContainer !== undefined ? (
+                  // Rebuild container function to refresh Portal component.
+                  <Portal container={() => paginationContainer()}>{paginationInstance}</Portal>
+                ) : (
+                  paginationInstance
+                ))}
+            </Col>
+            <Col mediumSize={4}>
+              {filterContainer ? <Portal container={() => filterContainer()}>{filterInstance}</Portal> : filterInstance}
+            </Col>
+            <Col mediumSize={1} style={{ justifyContent: 'end', display: 'flex' }}>
+              {itemsPerPageContainer !== undefined ? (
+                <Portal container={() => itemsPerPageContainer()}>{dropdownItemsPerPage}</Portal>
+              ) : (
+                dropdownItemsPerPage
+              )}
+            </Col>
+          </SingleLineRow>
+        </Container>
         <table className='table'>
           <thead className='thead-default'>
             <tr>
@@ -882,29 +908,6 @@ class SortedTable extends Component {
             )}
           </tbody>
         </table>
-        <Container>
-          <SingleLineRow>
-            <Col mediumSize={7}>
-              {displayPagination &&
-                (paginationContainer !== undefined ? (
-                  // Rebuild container function to refresh Portal component.
-                  <Portal container={() => paginationContainer()}>{paginationInstance}</Portal>
-                ) : (
-                  paginationInstance
-                ))}
-            </Col>
-            <Col mediumSize={4}>
-              {filterContainer ? <Portal container={() => filterContainer()}>{filterInstance}</Portal> : filterInstance}
-            </Col>
-            <Col mediumSize={1} className='pull-right'>
-              {itemsPerPageContainer !== undefined ? (
-                <Portal container={() => itemsPerPageContainer()}>{dropdownItemsPerPage}</Portal>
-              ) : (
-                dropdownItemsPerPage
-              )}
-            </Col>
-          </SingleLineRow>
-        </Container>
       </div>
     )
   }

@@ -8,13 +8,7 @@ import { defer } from 'golike-defer'
 import { FAIL_ON_QUEUE } from 'limit-concurrency-decorator'
 import { format } from 'json-rpc-peer'
 import { ignoreErrors } from 'promise-toolbox'
-import {
-  forbiddenOperation,
-  invalidParameters,
-  noSuchObject,
-  operationFailed,
-  unauthorized,
-} from 'xo-common/api-errors.js'
+import { invalidParameters, noSuchObject, operationFailed, unauthorized } from 'xo-common/api-errors.js'
 
 import { forEach, map, mapFilter, parseSize, safeDateFormat } from '../utils.mjs'
 
@@ -838,219 +832,6 @@ snapshot.resolve = {
 
 // -------------------------------------------------------------------
 
-export function rollingDeltaBackup({ vm, remote, tag, depth, retention = depth }) {
-  return this.rollingDeltaVmBackup({
-    vm,
-    remoteId: remote,
-    tag,
-    retention,
-  })
-}
-
-rollingDeltaBackup.params = {
-  id: { type: 'string' },
-  remote: { type: 'string' },
-  tag: { type: 'string' },
-  retention: { type: ['string', 'number'], optional: true },
-  // This parameter is deprecated. It used to support the old saved backups jobs.
-  depth: { type: ['string', 'number'], optional: true },
-}
-
-rollingDeltaBackup.resolve = {
-  vm: ['id', ['VM', 'VM-snapshot'], 'administrate'],
-}
-
-rollingDeltaBackup.permission = 'admin'
-
-// -------------------------------------------------------------------
-
-export function importDeltaBackup({ sr, remote, filePath, mapVdisSrs }) {
-  const mapVdisSrsXapi = {}
-
-  forEach(mapVdisSrs, (srId, vdiId) => {
-    mapVdisSrsXapi[vdiId] = this.getObject(srId, 'SR')._xapiId
-  })
-
-  return this.importDeltaVmBackup({
-    sr,
-    remoteId: remote,
-    filePath,
-    mapVdisSrs: mapVdisSrsXapi,
-  }).then(_ => _.vm)
-}
-
-importDeltaBackup.params = {
-  sr: { type: 'string' },
-  remote: { type: 'string' },
-  filePath: { type: 'string' },
-  // Map VDIs UUIDs --> SRs IDs
-  mapVdisSrs: { type: 'object', optional: true },
-}
-
-importDeltaBackup.resolve = {
-  sr: ['sr', 'SR', 'operate'],
-}
-
-importDeltaBackup.permission = 'admin'
-
-// -------------------------------------------------------------------
-
-export function deltaCopy({ force, vm, retention, sr }) {
-  return this.deltaCopyVm(vm, sr, force, retention)
-}
-
-deltaCopy.params = {
-  force: { type: 'boolean', optional: true },
-  id: { type: 'string' },
-  retention: { type: 'number', optional: true },
-  sr: { type: 'string' },
-}
-
-deltaCopy.resolve = {
-  vm: ['id', 'VM', 'operate'],
-  sr: ['sr', 'SR', 'operate'],
-}
-
-// -------------------------------------------------------------------
-
-export async function rollingSnapshot({ vm, tag, depth, retention = depth }) {
-  await checkPermissionOnSrs.call(this, vm)
-  return this.rollingSnapshotVm(vm, tag, retention)
-}
-
-rollingSnapshot.params = {
-  id: { type: 'string' },
-  tag: { type: 'string' },
-  retention: { type: 'number', optional: true },
-  // This parameter is deprecated. It used to support the old saved backups jobs.
-  depth: { type: 'number', optional: true },
-}
-
-rollingSnapshot.resolve = {
-  vm: ['id', 'VM', 'administrate'],
-}
-
-rollingSnapshot.description =
-  'Snapshots a VM with a tagged name, and removes the oldest snapshot with the same tag according to retention'
-
-// -------------------------------------------------------------------
-
-export function backup({ vm, remoteId, file, compress }) {
-  return this.backupVm({ vm, remoteId, file, compress })
-}
-
-backup.permission = 'admin'
-
-backup.params = {
-  id: { type: 'string' },
-  remoteId: { type: 'string' },
-  file: { type: 'string' },
-  compress: { type: 'boolean', optional: true },
-}
-
-backup.resolve = {
-  vm: ['id', 'VM', 'administrate'],
-}
-
-backup.description = 'Exports a VM to the file system'
-
-// -------------------------------------------------------------------
-
-export function importBackup({ remote, file, sr }) {
-  return this.importVmBackup(remote, file, sr)
-}
-
-importBackup.permission = 'admin'
-importBackup.description = 'Imports a VM into host, from a file found in the chosen remote'
-importBackup.params = {
-  remote: { type: 'string' },
-  file: { type: 'string' },
-  sr: { type: 'string' },
-}
-
-importBackup.resolve = {
-  sr: ['sr', 'SR', 'operate'],
-}
-
-importBackup.permission = 'admin'
-
-// -------------------------------------------------------------------
-
-export function rollingBackup({ vm, remoteId, tag, depth, retention = depth, compress }) {
-  return this.rollingBackupVm({
-    vm,
-    remoteId,
-    tag,
-    retention,
-    compress,
-  })
-}
-
-rollingBackup.permission = 'admin'
-
-rollingBackup.params = {
-  id: { type: 'string' },
-  remoteId: { type: 'string' },
-  tag: { type: 'string' },
-  retention: { type: 'number', optional: true },
-  // This parameter is deprecated. It used to support the old saved backups jobs.
-  depth: { type: 'number', optional: true },
-  compress: { type: 'boolean', optional: true },
-}
-
-rollingBackup.resolve = {
-  vm: ['id', ['VM', 'VM-snapshot'], 'administrate'],
-}
-
-rollingBackup.description =
-  'Exports a VM to the file system with a tagged name, and removes the oldest backup with the same tag according to retention'
-
-// -------------------------------------------------------------------
-
-export function rollingDrCopy({ vm, pool, sr, tag, depth, retention = depth, deleteOldBackupsFirst }) {
-  if (sr === undefined) {
-    if (pool === undefined) {
-      throw invalidParameters('either pool or sr param should be specified')
-    }
-
-    if (vm.$pool === pool.id) {
-      throw forbiddenOperation('Disaster Recovery attempts to copy on the same pool')
-    }
-
-    sr = this.getObject(pool.default_SR, 'SR')
-  }
-
-  return this.rollingDrCopyVm({
-    vm,
-    sr,
-    tag,
-    retention,
-    deleteOldBackupsFirst,
-  })
-}
-
-rollingDrCopy.params = {
-  retention: { type: 'number', optional: true },
-  // This parameter is deprecated. It used to support the old saved backups jobs.
-  depth: { type: 'number', optional: true },
-  id: { type: 'string' },
-  pool: { type: 'string', optional: true },
-  sr: { type: 'string', optional: true },
-  tag: { type: 'string' },
-  deleteOldBackupsFirst: { type: 'boolean', optional: true },
-}
-
-rollingDrCopy.resolve = {
-  vm: ['id', ['VM', 'VM-snapshot'], 'administrate'],
-  pool: ['pool', 'pool', 'administrate'],
-  sr: ['sr', 'SR', 'administrate'],
-}
-
-rollingDrCopy.description =
-  'Copies a VM to a different pool, with a tagged name, and removes the oldest VM with the same tag from this pool, according to retention'
-
-// -------------------------------------------------------------------
-
 export function start({ vm, bypassMacAddressesCheck, force, host }) {
   return this.getXapi(vm).startVm(vm._xapiId, { bypassMacAddressesCheck, force, hostId: host?._xapiId })
 }
@@ -1256,38 +1037,42 @@ async function handleVmImport(req, res, { data, srId, type, xapi }) {
   // Timeout seems to be broken in Node 4.
   // See https://github.com/nodejs/node/issues/3319
   req.setTimeout(43200000) // 12 hours
-  await new Promise((resolve, reject) => {
+  const vm = await new Promise((resolve, reject) => {
     const form = new multiparty.Form()
     const promises = []
     const tables = {}
     form.on('error', reject)
     form.on('part', async part => {
-      if (part.name !== 'file') {
-        promises.push(
-          (async () => {
-            if (!(part.filename in tables)) {
-              tables[part.filename] = {}
-            }
-            const view = new DataView((await getStream.buffer(part)).buffer)
-            const result = new Uint32Array(view.byteLength / 4)
-            for (const i in result) {
-              result[i] = view.getUint32(i * 4, true)
-            }
-            tables[part.filename][part.name] = result
-            data.tables = tables
-          })()
-        )
-      } else {
-        await Promise.all(promises)
-        // XVA files are directly sent to xcp-ng who wants a content-length
-        part.length = part.byteCount
-        const vm = await xapi.importVm(part, { data, srId, type })
-        res.end(format.response(0, vm.$id))
-        resolve()
+      try {
+        if (part.name !== 'file') {
+          promises.push(
+            (async () => {
+              if (!(part.filename in tables)) {
+                tables[part.filename] = {}
+              }
+              const buffer = await getStream.buffer(part)
+              tables[part.filename][part.name] = new Uint32Array(
+                buffer.buffer,
+                buffer.byteOffset,
+                buffer.length / Uint32Array.BYTES_PER_ELEMENT
+              )
+              data.tables = tables
+            })()
+          )
+        } else {
+          await Promise.all(promises)
+          // XVA files are directly sent to xcp-ng who wants a content-length
+          part.length = part.byteCount
+          resolve(xapi.importVm(part, { data, srId, type }))
+        }
+      } catch (e) {
+        // multiparty is not promise-aware, we have to chain errors ourselves.
+        reject(e)
       }
     })
     form.parse(req)
   })
+  res.end(format.response(0, vm.$id))
 }
 
 // TODO: "sr_id" can be passed in URL to target a specific SR
@@ -1297,12 +1082,18 @@ async function import_({ data, sr, type }) {
   }
 
   return {
-    $sendTo: await this.registerHttpRequest(handleVmImport, {
-      data,
-      srId: sr._xapiId,
-      type,
-      xapi: this.getXapi(sr),
-    }),
+    $sendTo: await this.registerApiHttpRequest(
+      'vm.import',
+      this.session,
+      handleVmImport,
+      {
+        data,
+        srId: sr._xapiId,
+        type,
+        xapi: this.getXapi(sr),
+      },
+      { exposeAllErrors: true }
+    ),
   }
 }
 

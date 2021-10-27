@@ -10,7 +10,7 @@ import { get as getDefined } from '@xen-orchestra/defined'
 import { pFinally, reflect, tap, tapCatch } from 'promise-toolbox'
 import { SelectHost } from 'select-objects'
 import { filter, forEach, get, includes, isEmpty, isEqual, map, once, size, sortBy, throttle } from 'lodash'
-import { forbiddenOperation, incorrectState, noHostsAvailable } from 'xo-common/api-errors'
+import { forbiddenOperation, incorrectState, noHostsAvailable, vmLacksFeature } from 'xo-common/api-errors'
 
 import _ from '../intl'
 import fetch, { post } from '../fetch'
@@ -97,14 +97,15 @@ const _signIn = new Promise(resolve => xo.once('authenticated', resolve))
 const _call = new URLSearchParams(window.location.search.slice(1)).has('debug')
   ? async (method, params) => {
       await _signIn
+      const now = Date.now()
       return tap.call(
         xo.call(method, params),
         result => {
           // eslint-disable-next-line no-console
-          console.debug('API call', method, params, result)
+          console.debug('API call (%d ms)', Date.now() - now, method, params, result)
         },
         error => {
-          console.error('API call error', method, params, error)
+          console.error('API call (%d ms) error', Date.now() - now, method, params, error)
         }
       )
     }
@@ -165,9 +166,9 @@ export const resolveUrl = invoke(
 )
 
 // -------------------------------------------------------------------
-
-const createSubscription = cb => {
-  const delay = 5e3 // 5s
+// Default subscription 5s
+const createSubscription = (cb, { polling = 5e3 } = {}) => {
+  const delay = polling
   const clearCacheDelay = 6e5 // 10m
 
   // contains active and lazy subscribers
@@ -298,6 +299,17 @@ const createSubscription = cb => {
 export const subscribeCurrentUser = createSubscription(() => xo.refreshUser())
 
 export const subscribeAcls = createSubscription(() => _call('acl.get'))
+
+export const subscribeHvSupportedVersions = createSubscription(
+  async () => {
+    try {
+      return await _call('xoa.getHVSupportedVersions')
+    } catch (error) {
+      console.error(error)
+    }
+  },
+  { polling: 1e3 * 60 * 60 } // 1h
+)
 
 export const subscribeJobs = createSubscription(() => _call('job.getAll'))
 
@@ -1077,11 +1089,42 @@ export const startVms = vms =>
     }
   }, noop)
 
-export const stopVm = (vm, force = false) =>
-  confirm({
-    title: _('stopVmModalTitle'),
-    body: _('stopVmModalMessage', { name: vm.name_label }),
-  }).then(() => _call('vm.stop', { id: resolveId(vm), force }), noop)
+export const stopVm = async (vm, force = false) => {
+  try {
+    await confirm({
+      title: _('stopVmModalTitle'),
+      body: _('stopVmModalMessage', { name: vm.name_label }),
+    })
+
+    return await _call('vm.stop', { id: resolveId(vm), force })
+  } catch (error) {
+    if (error === undefined) {
+      return
+    }
+
+    if (!vmLacksFeature.is(error) || force) {
+      throw error
+    }
+
+    try {
+      await confirm({
+        title: _('vmHasNoTools'),
+        body: (
+          <div>
+            <p>{_('vmHasNoToolsMessage')}</p>
+            <p>
+              <strong>{_('confirmForceShutdown')}</strong>
+            </p>
+          </div>
+        ),
+      })
+    } catch {
+      return
+    }
+
+    return await _call('vm.stop', { id: resolveId(vm), force: true })
+  }
+}
 
 export const stopVms = (vms, force = false) =>
   confirm({
@@ -1107,11 +1150,42 @@ export const pauseVms = vms =>
 
 export const recoveryStartVm = vm => _call('vm.recoveryStart', { id: resolveId(vm) })
 
-export const restartVm = (vm, force = false) =>
-  confirm({
-    title: _('restartVmModalTitle'),
-    body: _('restartVmModalMessage', { name: vm.name_label }),
-  }).then(() => _call('vm.restart', { id: resolveId(vm), force }), noop)
+export const restartVm = async (vm, force = false) => {
+  try {
+    await confirm({
+      title: _('restartVmModalTitle'),
+      body: _('restartVmModalMessage', { name: vm.name_label }),
+    })
+
+    return await _call('vm.restart', { id: resolveId(vm), force })
+  } catch (error) {
+    if (error === undefined) {
+      return
+    }
+
+    if (!vmLacksFeature.is(error) || force) {
+      throw error
+    }
+
+    try {
+      await confirm({
+        title: _('vmHasNoTools'),
+        body: (
+          <div>
+            <p>{_('vmHasNoToolsMessage')}</p>
+            <p>
+              <strong>{_('confirmForceReboot')}</strong>
+            </p>
+          </div>
+        ),
+      })
+    } catch {
+      return
+    }
+
+    return await _call('vm.restart', { id: resolveId(vm), force: true })
+  }
+}
 
 export const restartVms = (vms, force = false) =>
   confirm({
@@ -1368,15 +1442,17 @@ export const createVms = (args, nameLabels, cloudConfigs) =>
     body: _('newVmCreateVmsConfirm', { nbVms: nameLabels.length }),
   }).then(() =>
     Promise.all(
-      map(nameLabels, (
-        name_label, // eslint-disable-line camelcase
-        i
-      ) =>
-        _call('vm.create', {
-          ...args,
-          name_label,
-          cloudConfig: get(cloudConfigs, i),
-        })
+      map(
+        nameLabels,
+        (
+          name_label, // eslint-disable-line camelcase
+          i
+        ) =>
+          _call('vm.create', {
+            ...args,
+            name_label,
+            cloudConfig: get(cloudConfigs, i),
+          })
       )
     )
   )
@@ -1454,32 +1530,29 @@ export const importVm = async (file, type = 'xva', data = undefined, sr) => {
   const { name } = file
 
   info(_('startVmImport'), name)
+  // eslint-disable-next-line no-undef
   const formData = new FormData()
   if (data !== undefined && data.tables !== undefined) {
     for (const k in data.tables) {
       const tables = await data.tables[k]
       delete data.tables[k]
       for (const l in tables) {
+        // eslint-disable-next-line no-undef
         const blob = new Blob([tables[l]])
         formData.append(l, blob, k)
       }
     }
   }
-  return _call('vm.import', { type, data, sr: resolveId(sr) }).then(async ({ $sendTo }) => {
-    formData.append('file', file)
-    return post($sendTo, formData)
-      .then(res => {
-        if (res.status !== 200) {
-          throw res.status
-        }
-        success(_('vmImportSuccess'), name)
-        return res.json().then(body => body.result)
-      })
-      .catch(err => {
-        error(_('vmImportFailed'), name)
-        throw err
-      })
-  })
+  const result = await _call('vm.import', { type, data, sr: resolveId(sr) })
+  formData.append('file', file)
+  const res = await post(result.$sendTo, formData)
+  const json = await res.json()
+  if (res.status !== 200) {
+    error(_('vmImportFailed'), name)
+    throw json.error
+  }
+  success(_('vmImportSuccess'), name)
+  return json.result
 }
 
 import ImportVdiModalBody from './import-vdi-modal' // eslint-disable-line import/first
@@ -1523,11 +1596,13 @@ export const importVms = (vms, sr) =>
   ).then(ids => ids.filter(_ => _ !== undefined))
 
 const importDisk = async ({ description, file, name, type, vmdkData }, sr) => {
+  // eslint-disable-next-line no-undef
   const formData = new FormData()
   if (vmdkData !== undefined) {
     for (const l of ['grainLogicalAddressList', 'grainFileOffsetList']) {
       const table = await vmdkData[l]
       delete vmdkData[l]
+      // eslint-disable-next-line no-undef
       const blob = new Blob([table])
       formData.append(l, blob, file.name)
     }
@@ -1541,10 +1616,10 @@ const importDisk = async ({ description, file, name, type, vmdkData }, sr) => {
   })
   formData.append('file', file)
   const result = await post(res.$sendTo, formData)
-  if (result.status !== 200) {
-    throw result.status
-  }
   const body = await result.json()
+  if (result.status !== 200) {
+    throw new Error(body.error.message)
+  }
   await body.result
 }
 
@@ -1552,7 +1627,7 @@ export const importDisks = (disks, sr) =>
   Promise.all(
     map(disks, disk =>
       importDisk(disk, sr).catch(err => {
-        error(_('diskImportFailed'), err)
+        error(_('diskImportFailed'), err.message)
         throw err
       })
     )
@@ -3001,3 +3076,12 @@ export const synchronizeLdapGroups = () =>
     body: _('syncLdapGroupsWarning'),
     icon: 'refresh',
   }).then(() => _call('ldap.synchronizeGroups')::tap(subscribeGroups.forceRefresh), noop)
+
+// Netbox plugin ---------------------------------------------------------------
+
+export const synchronizeNetbox = pools =>
+  confirm({
+    title: _('syncNetbox'),
+    body: _('syncNetboxWarning'),
+    icon: 'refresh',
+  }).then(() => _call('netbox.synchronize', { pools: resolveIds(pools) }))

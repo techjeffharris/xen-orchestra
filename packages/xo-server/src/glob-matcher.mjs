@@ -1,6 +1,8 @@
 // See: https://gist.github.com/julien-f/5b9a3537eb82a34b04e2
 
-import { matcher } from 'micromatch'
+import micromatch from 'micromatch'
+
+const { matcher } = micromatch
 
 export default function globMatcher(patterns, opts) {
   if (!Array.isArray(patterns)) {

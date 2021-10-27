@@ -9,7 +9,7 @@
   },
   "version": "0.2.0",
   "engines": {
-    "node": ">=8.10"
+    "node": ">=10"
   },
   "main": "dist/",
   "scripts": {
@@ -30,9 +30,8 @@
     "rimraf": "^3.0.0"
   },
   "dependencies": {
-    "@vates/decorate-with": "^0.0.1",
-    "@xen-orchestra/log": "^0.2.0",
-    "core-js": "^3.6.4",
+    "@vates/decorate-with": "^0.1.0",
+    "@xen-orchestra/log": "^0.3.0",
     "golike-defer": "^0.5.1",
     "object-hash": "^2.0.1"
   },

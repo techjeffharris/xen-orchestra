@@ -20,7 +20,7 @@ Once you have started the VM, you can access the web UI by putting the IP you co
 :::tip
 
 - Default Web UI credentials are `admin@admin.net` / `admin`
-- Default console/SSH credentials are `xoa` / `xoa` (first login)
+- Default console/SSH credentials are not set, you need to set them [as described here](troubleshooting.md#set-or-recover-xoa-vm-password).
   :::
 
 ### Registration
@@ -83,13 +83,13 @@ As you may have seen in other parts of the documentation, XO is composed of two 
 
 #### NodeJS
 
-XO needs Node.js. **Please use Node LTS 14**.
+XO needs Node.js. **Please always use latest Node LTS**.
 
 We'll consider at this point that you've got a working node on your box. E.g:
 
 ```
 $ node -v
-v14.16.0
+v14.17.0
 ```
 
 If not, see [this page](https://nodejs.org/en/download/package-manager/) for instructions on how to install Node.
@@ -199,9 +199,9 @@ forever start dist/cli.mjs
 yarn global add forever
 yarn global add forever-service
 # Be sure to edit the path below to where your install is located!
-cd /home/username/xen-orchestra/packages/xo-server/bin/
+cd /home/username/xen-orchestra/packages/xo-server/
 # Change the username below to the user owning XO
-forever-service install orchestra -r username -s xo-server
+forever-service install orchestra -r username -s dist/cli.mjs
 ```
 
 The forever-service command above must be run in the xo-server bin directory. Now you can manage the service, and it will start on boot with the machine:

@@ -261,11 +261,7 @@ gulp.task(function buildScripts() {
       ],
     }),
     require('gulp-sourcemaps').init({ loadMaps: true }),
-    PRODUCTION &&
-      require('gulp-uglify/composer')(require('uglify-es'))({
-        // 2019-09-04 Disabling inline optimization until https://github.com/mishoo/UglifyJS2/issues/2842 is fixed
-        compress: { inline: false },
-      }),
+    PRODUCTION && require('gulp-terser')(),
     dest()
   )
 })
@@ -273,7 +269,7 @@ gulp.task(function buildScripts() {
 gulp.task(function buildStyles() {
   return pipe(
     src('index.scss', { sourcemaps: true }),
-    require('gulp-sass')(),
+    require('gulp-sass')(require('sass'))(),
     require('gulp-autoprefixer')(['last 1 version', '> 1%']),
     PRODUCTION && require('gulp-csso')(),
     dest()

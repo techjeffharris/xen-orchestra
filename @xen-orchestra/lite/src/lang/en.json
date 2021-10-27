@@ -9,6 +9,8 @@
   "create": "Create",
   "ctrlAltDel": "Ctrl+Alt+Del",
   "defaultValue": "Default: {value}",
+  "about": "About",
+  "availableUpdates": "{nUpdates, number} available update{nUpdates, plural, one {} other {s}}",
   "description": "Description",
   "device": "Device",
   "disconnect": "Disconnect",
@@ -31,5 +33,18 @@
   "selectChoice": "Please select a choice",
   "selectPif": "Please select a PIF",
   "vlan": "VLAN",
-  "vlanPlaceholder": "No VLAN if empty"
+  "vlanPlaceholder": "No VLAN if empty",
+  "errorOccurred": "An error has occurred.",
+  "halted": "Halted",
+  "infrastructure": "Infrastructure",
+  "notFound": "Not Found",
+  "pageNotFound": "This page doesn't exist.",
+  "noUpdatesAvailable": "No updates available",
+  "paused": "Paused",
+  "release": "Release",
+  "running": "Running",
+  "size": "Size",
+  "suspended": "Suspended",
+  "version": "Version",
+  "versionValue": "Version {version}"
 }

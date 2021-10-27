@@ -34,6 +34,7 @@ export const VIRTUALIZATION_MODE_LABEL = {
   hvm: 'hardwareVirtualizedMode',
   pv: 'paraVirtualizedMode',
   pvhvm: 'hvmModeWithPvDriversEnabled',
+  pv_in_pvh: 'pvInPvhMode',
 }
 
 // ===================================================================
@@ -44,8 +45,9 @@ export addSubscriptions from './add-subscriptions'
 
 export const getVirtualizationModeLabel = vm => {
   const virtualizationMode = vm.virtualizationMode === 'hvm' && vm.pvDriversDetected ? 'pvhvm' : vm.virtualizationMode
+  const messageId = VIRTUALIZATION_MODE_LABEL[virtualizationMode]
 
-  return VIRTUALIZATION_MODE_LABEL[virtualizationMode]
+  return messageId === undefined ? virtualizationMode : _(messageId)
 }
 
 // ===================================================================
@@ -576,18 +578,20 @@ export const downloadLog = ({ log, date, type }) => {
 //   ])
 // )
 // ```
-export const createCompare = criterias => (...items) => {
-  let res = 0
-  // Array.find to stop when the result is != 0
-  criterias.find(fn => {
-    const [v1, v2] = items.map(item => {
-      const v = typeof fn === 'string' ? item[fn] : fn(item)
-      return v === true ? -1 : v === false ? 1 : v
+export const createCompare =
+  criterias =>
+  (...items) => {
+    let res = 0
+    // Array.find to stop when the result is != 0
+    criterias.find(fn => {
+      const [v1, v2] = items.map(item => {
+        const v = typeof fn === 'string' ? item[fn] : fn(item)
+        return v === true ? -1 : v === false ? 1 : v
+      })
+      return (res = v1 < v2 ? -1 : v1 > v2 ? 1 : 0)
     })
-    return (res = v1 < v2 ? -1 : v1 > v2 ? 1 : 0)
-  })
-  return res
-}
+    return res
+  }
 
 // ===================================================================
 

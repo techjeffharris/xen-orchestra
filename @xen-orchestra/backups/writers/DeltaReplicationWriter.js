@@ -77,7 +77,7 @@ exports.DeltaReplicationWriter = class DeltaReplicationWriter extends MixinRepli
     return asyncMapSettled(this._oldEntries, vm => vm.$destroy())
   }
 
-  async transfer({ timestamp, deltaExport, sizeContainers }) {
+  async _transfer({ timestamp, deltaExport, sizeContainers }) {
     const sr = this._sr
     const { job, scheduleId, vm } = this._backup
 
@@ -106,9 +106,11 @@ exports.DeltaReplicationWriter = class DeltaReplicationWriter extends MixinRepli
       targetVm.ha_restart_priority !== '' &&
         Promise.all([targetVm.set_ha_restart_priority(''), targetVm.add_tags('HA disabled')]),
       targetVm.set_name_label(`${vm.name_label} - ${job.name} - (${formatFilenameDate(timestamp)})`),
-      targetVm.update_blocked_operations(
-        'start',
-        'Start operation for this vm is blocked, clone it if you want to use it.'
+      asyncMap(['start', 'start_on'], op =>
+        targetVm.update_blocked_operations(
+          op,
+          'Start operation for this vm is blocked, clone it if you want to use it.'
+        )
       ),
       targetVm.update_other_config({
         'xo:backup:sr': srUuid,
