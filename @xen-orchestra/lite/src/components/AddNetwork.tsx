@@ -164,9 +164,8 @@ const AddNetwork = withState<State, Props, Effects, Computed, ParentState, Paren
           <label>
             <IntlMessage id='interface' />
           </label>
-          <Select
+          {/* <Select
             additionalProps={{ pifsMetrics: state.pifsMetrics }}
-            displayEmpty
             multiple={state.isBonded}
             name='pifsId'
             onChange={effects._handleChange}
@@ -175,7 +174,7 @@ const AddNetwork = withState<State, Props, Effects, Computed, ParentState, Paren
             placeholder='selectPif'
             required={state.isBonded}
             value={state.form.pifsId}
-          />
+          /> */}
         </div>
         <div>
           <label>
@@ -210,8 +209,7 @@ const AddNetwork = withState<State, Props, Effects, Computed, ParentState, Paren
             <label>
               <IntlMessage id='bondMode' />
             </label>
-            <Select
-              displayEmpty
+            {/* <Select
               name='bondMode'
               onChange={effects._handleChange}
               options={BOND_MODE}
@@ -219,7 +217,7 @@ const AddNetwork = withState<State, Props, Effects, Computed, ParentState, Paren
               placeholder='selectBondMode'
               required
               value={state.form.bondMode}
-            />
+            /> */}
           </div>
         ) : (
           <div>

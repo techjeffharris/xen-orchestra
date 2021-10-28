@@ -279,9 +279,6 @@ const App = withState<State, Props, Effects, Computed, ParentState, ParentEffect
               <Route exact path='/styleguide'>
                 <StyleGuide />
               </Route>
-              <Route exact path='/pool'>
-                <PoolTab />
-              </Route>
               <Route path='/'>
                 {/* Provided by this template: https://github.com/mui-org/material-ui/tree/next/docs/src/pages/getting-started/templates/dashboard */}
                 <ThemeProvider theme={mdTheme}>
@@ -312,6 +309,9 @@ const App = withState<State, Props, Effects, Computed, ParentState, ParentEffect
                             </Route>
                             <Route path='/about'>
                               <IntlMessage id='about' />
+                            </Route>
+                            <Route path='/pool'>
+                              <IntlMessage id='pool' />
                             </Route>
                             <Route>
                               <IntlMessage id='notFound' />
@@ -376,6 +376,10 @@ const App = withState<State, Props, Effects, Computed, ParentState, ParentEffect
                               <IntlMessage id='versionValue' values={{ version: process.env.NPM_VERSION }} />
                             </p>
                           </Container>
+                        </Route>
+                        <Route path='/pool'>
+                          <Toolbar />
+                          <PoolTab />
                         </Route>
                         <Route>
                           <Toolbar />
