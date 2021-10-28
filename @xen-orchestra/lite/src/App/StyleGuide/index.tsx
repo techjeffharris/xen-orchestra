@@ -88,7 +88,6 @@ const App = withState<State, Props, Effects, Computed, ParentState, ParentEffect
         <Render>
           <Select
             onChange={effects.onChangeSelect}
-            optionRenderer={item => item.name}
             options={[
               { name: 'Bar', value: 1 },
               { name: 'Foo', value: 2 },

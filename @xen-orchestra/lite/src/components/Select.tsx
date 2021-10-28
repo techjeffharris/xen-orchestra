@@ -26,9 +26,9 @@ interface ParentEffects {}
 interface Effects {}
 
 interface Computed {
-  renderings?: JSX.Element[]
   renderOption: (item: any, additionalProps?: AdditionalProps) => React.ReactNode
   renderValue: (item: any, additionalProps?: AdditionalProps) => number | string
+  selectOptions?: JSX.Element[]
 }
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -43,18 +43,20 @@ const useStyles = makeStyles((theme: Theme) =>
 const Select = withState<State, Props, Effects, Computed, ParentState, ParentEffects>(
   {
     computed: {
-      renderings: (state, { additionalProps, options }) =>
+      // @ts-ignore
+      renderOption: (_, { optionRenderer }) => iteratee(optionRenderer),
+      // @ts-ignore
+      renderValue: (_, { valueRenderer }) => iteratee(valueRenderer),
+      selectOptions: (state, { additionalProps, options, optionRenderer, valueRenderer }) =>
         options?.map(item => {
-          const render =
-            typeof state.renderOption(item, additionalProps) === 'object'
-              ? item.name ?? item.label ?? item.name_label ?? undefined
+          const label =
+            optionRenderer === undefined
+              ? item.name ?? item.label ?? item.name_label
               : state.renderOption(item, additionalProps)
           const value =
-            typeof state.renderValue(item, additionalProps) === 'object'
-              ? item.value ?? item.id ?? item.$id ?? undefined
-              : state.renderValue(item, additionalProps)
+            valueRenderer === undefined ? item.value ?? item.id ?? item.$id : state.renderValue(item, additionalProps)
 
-          if (render === undefined) {
+          if (label === undefined) {
             console.error('optionRenderer is undefined')
           }
           if (value === undefined) {
@@ -63,14 +65,10 @@ const Select = withState<State, Props, Effects, Computed, ParentState, ParentEff
 
           return (
             <MenuItem key={value} value={value}>
-              {render}
+              {label}
             </MenuItem>
           )
         }),
-      // @ts-ignore
-      renderOption: (_, { optionRenderer }) => iteratee(optionRenderer),
-      // @ts-ignore
-      renderValue: (_, { valueRenderer }) => iteratee(valueRenderer),
     },
   },
   ({ additionalProps, displayEmpty = true, effects, multiple, options, required, resetState, state, ...props }) => (
@@ -83,7 +81,7 @@ const Select = withState<State, Props, Effects, Computed, ParentState, ParentEff
             </em>
           </MenuItem>
         )}
-        {state.renderings?.map(rendering => rendering)}
+        {state.selectOptions}
       </SelectMaterialUi>
     </FormControl>
   )
