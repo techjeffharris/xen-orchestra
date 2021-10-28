@@ -56,11 +56,8 @@ const Select = withState<State, Props, Effects, Computed, ParentState, ParentEff
           const value =
             valueRenderer === undefined ? item.value ?? item.id ?? item.$id : state.renderValue(item, additionalProps)
 
-          if (label === undefined) {
-            console.error('optionRenderer is undefined')
-          }
           if (value === undefined) {
-            console.error('valueRenderer is undefined')
+            console.error('Computed value is undefined')
           }
 
           return (
