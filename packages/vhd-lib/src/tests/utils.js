@@ -1,20 +1,16 @@
-import { pFromCallback } from 'promise-toolbox'
-import { pipeline } from 'readable-stream'
-import asyncIteratorToStream from 'async-iterator-to-stream'
 import execa from 'execa'
 import fs from 'fs-extra'
 import { randomBytes } from 'crypto'
 
-const createRandomStream = asyncIteratorToStream(function* (size) {
-  while (size > 0) {
-    yield randomBytes(Math.min(size, 1024))
-    size -= 1024
-  }
-})
 
 export async function createRandomFile(name, sizeMB) {
-  const input = createRandomStream(sizeMB * 1024 * 1024)
-  await pFromCallback(cb => pipeline(input, fs.createWriteStream(name), cb))
+  let size = sizeMB * 1024 * 1024
+  const output = await fs.open(name, 'w')
+  while (size > 0) {
+    await fs.write(output,randomBytes(Math.min(size, 1024)))
+    size -= 1024
+  }
+  await fs.close(output)
 }
 
 export async function checkFile(vhdName) {
