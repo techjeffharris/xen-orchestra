@@ -16,7 +16,7 @@ import { checkFile, createRandomFile, convertFromRawToVhd, recoverRawContent } f
 
 let tempDir = null
 
-//jest.setTimeout(60000)
+jest.setTimeout(60000)
 
 beforeEach(async () => {
   tempDir = await pFromCallback(cb => tmp.dir(cb))
@@ -158,6 +158,7 @@ test('BAT can be extended and blocks moved', async () => {
   await newVhd.readHeaderAndFooter()
   await newVhd.readBlockAllocationTable()
   await newVhd.ensureBatSize(2000)
+  await newVhd.writeBlockAllocationTable()
   await recoverRawContent(vhdFileName, recoveredFileName, originalSize)
   expect(await fs.readFile(recoveredFileName)).toEqual(await fs.readFile(rawFileName))
 })

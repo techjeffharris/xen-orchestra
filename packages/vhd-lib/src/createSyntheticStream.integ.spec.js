@@ -8,7 +8,8 @@ import { getHandler } from '@xen-orchestra/fs'
 import { pFromCallback } from 'promise-toolbox'
 import { pipeline } from 'readable-stream'
 
-import { checkFile, createRandomFile, convertFromRawToVhd, recoverRawContent } from './tests/utils'
+import { checkFile, createRandomFile, convertFromRawToVhd } from './tests/utils'
+import createSyntheticStream from './createSyntheticStream'
 
 let tempDir = null
 

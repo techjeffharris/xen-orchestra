@@ -19,7 +19,7 @@ beforeEach(async () => {
 afterEach(async () => {
   await pFromCallback(cb => rimraf(tempDir, cb))
 })
-/*
+
 test('ReadableRawVHDStream does not crash', async () => {
   const data = [
     {
@@ -79,7 +79,7 @@ test('ReadableRawVHDStream detects when blocks are out of order', async () => {
       pipeline(stream, createWriteStream(`${tempDir}/outputStream`), err => (err ? reject(err) : resolve()))
     })
   ).rejects.toThrow('Received out of order blocks')
-})*/
+})
 
 test('ReadableSparseVHDStream can handle a sparse file', async () => {
   const blockSize = Math.pow(2, 16)
@@ -94,7 +94,6 @@ test('ReadableSparseVHDStream can handle a sparse file', async () => {
     },
   ]
   const fileSize = blockSize * 110
-  console.log('will create readable stream')
   const stream = await createReadableSparseStream(
     fileSize,
     blockSize,
@@ -102,23 +101,9 @@ test('ReadableSparseVHDStream can handle a sparse file', async () => {
     blocks
   )
   expect(stream.length).toEqual(4197888)
-  stream.on('end', () => {
-    console.log('stream done')
-  })
-
-  stream.on('close', () => {
-    console.log('stream close')
-    console.log(`source flowing mode: ${stream._readableState.flowing}`)
-  })
-  stream.on('data', () => {
-    console.log('stream data')
-    console.log(`source flowing mode: ${stream._readableState.flowing}`)
-  })
   const pipe = stream.pipe(createWriteStream(`${tempDir}/output.vhd`))
 
-  console.log('will pipe createWriteStream')
   await fromEvent(pipe, 'finish')
-  console.log('finished')
   await checkFile(`${tempDir}/output.vhd`)
   await convertFromVhdToRaw(`${tempDir}/output.vhd`, `${tempDir}/out1.raw`)
   const out1 = await readFile(`${tempDir}/out1.raw`)
